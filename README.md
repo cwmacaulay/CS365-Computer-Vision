@@ -10,6 +10,7 @@ projects: in src/
 2- Content Based Image Recognition
       make CBIR
       ../bin/CBIR ../ an image database
+      
 3- Object Recognition
       make OR
       ../OR

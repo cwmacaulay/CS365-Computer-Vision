@@ -3,6 +3,7 @@
 This is my working directory for my class CS365 Computer Vision:
 
 projects: in src/
+
 1- Image modification
       make imod
       ../bin/imod ../data/starfuries.png

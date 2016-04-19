@@ -1,0 +1,56 @@
+/*
+ * Copyright 1998-2002 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include <gtk/gtk.h>
+#include <gtkmm/stock.h>
+#include <gtkmm/image.h>
+
+namespace Gtk
+{
+
+Button::Button(const Glib::ustring& label, bool mnemonic)
+:
+  _CONSTRUCT("label", label.c_str(), "use_underline", gboolean(mnemonic))
+{}
+
+#ifndef GTKMM_DISABLE_DEPRECATED
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+Button::Button(const StockID& stock_id)
+:
+  _CONSTRUCT("use_stock", 1, "label", stock_id.get_c_str())
+{}
+G_GNUC_END_IGNORE_DEPRECATIONS
+#endif //GTKMM_DISABLE_DEPRECATED
+
+void Button::set_image_from_icon_name(const Glib::ustring& icon_name, IconSize size)
+{
+  auto image = Gtk::manage(new Image());
+  image->set_from_icon_name(icon_name, size);
+  set_image(*image);
+}
+
+void Button::set_image_from_icon_name(const Glib::ustring& icon_name, IconSize size, bool use_fallback)
+{
+  auto image = Gtk::manage(new Image());
+  image->set_from_icon_name(icon_name, size);
+  image->property_use_fallback() = use_fallback;
+  set_image(*image);
+}
+
+} // namespace Gtk
+

@@ -1,0 +1,91 @@
+/* Copyright 2002 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include <gdk/gdk.h>
+#include <gdkmm/cursor.h>
+#include <gdkmm/display.h>
+#include <gdkmm/seat.h>
+#include <gdkmm/window.h>
+
+namespace Gdk
+{
+
+std::vector<TimeCoord> Device::get_history(const Glib::RefPtr<Window>& window, guint32 start, guint32 stop) const
+{
+  GdkTimeCoord** coords = nullptr;
+  int events_count = 0;
+
+  // we don't care about returned value - false means that either getting history is unsupported or no motion events happened.
+  // it is undistinguishable.
+  gdk_device_get_history(const_cast<GdkDevice*>(gobj()), Glib::unwrap(window), start, stop, &coords, &events_count);
+  return Glib::ArrayHandler<TimeCoord, TimeCoordPtrTraits>::array_to_vector(coords, events_count, Glib::OWNERSHIP_DEEP);
+}
+
+void Device::get_position(int& x, int& y) const
+{
+  gdk_device_get_position(const_cast<GdkDevice*>(gobj()), nullptr, &x, &y);
+}
+
+void Device::get_position(Glib::RefPtr<Screen>& screen, int& x, int& y) const
+{
+  GdkScreen* cScreen = nullptr;
+  gdk_device_get_position(const_cast<GdkDevice*>(gobj()), &cScreen, &x, &y);
+  screen = Glib::wrap(cScreen, true);
+}
+
+void Device::get_position(double& x, double& y) const
+{
+  gdk_device_get_position_double(const_cast<GdkDevice*>(gobj()), nullptr, &x, &y);
+}
+
+void Device::get_position(Glib::RefPtr<Screen>& screen, double& x, double& y) const
+{
+  GdkScreen* cScreen = nullptr;
+  gdk_device_get_position_double(const_cast<GdkDevice*>(gobj()), &cScreen, &x, &y);
+  screen = Glib::wrap(cScreen, true);
+}
+
+Glib::RefPtr<Window> Device::get_window_at_position()
+{
+  auto retvalue = Glib::wrap(gdk_device_get_window_at_position(gobj(), nullptr, nullptr));
+  if(retvalue)
+    retvalue->reference(); //The function does not do a ref for us.
+  return retvalue;
+}
+
+Glib::RefPtr<const Window> Device::get_window_at_position() const
+{
+  return const_cast<Device*>(this)->get_window_at_position();
+}
+
+_DEPRECATE_IFDEF_START
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+GrabStatus Device::grab(const Glib::RefPtr<Window>& window, GrabOwnership grab_ownership, bool owner_events, EventMask event_mask, guint32 time_)
+{
+  return static_cast<GrabStatus>(gdk_device_grab(gobj(), Glib::unwrap(window), static_cast<GdkGrabOwnership>(grab_ownership), static_cast<int>(owner_events), static_cast<GdkEventMask>(event_mask), nullptr, time_));
+}
+G_GNUC_END_IGNORE_DEPRECATIONS
+_DEPRECATE_IFDEF_END
+
+std::vector<std::string> Device::list_axes() const
+{
+  auto glist = gdk_device_list_axes(const_cast<GdkDevice*>(gobj()));
+  return Glib::ListHandler<std::string, AtomStringTraits>::list_to_vector(glist, Glib::OWNERSHIP_SHALLOW);
+}
+
+} // namespace Gdk
+

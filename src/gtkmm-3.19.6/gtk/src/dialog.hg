@@ -1,0 +1,190 @@
+/*
+ * Copyright (C) 1998-2002 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include <vector>
+
+#include <gtkmm/window.h>
+#include <gtkmm/box.h>
+#include <gtkmm/button.h>
+#include <gtkmm/buttonbox.h>
+#include <gtkmm/headerbar.h>
+
+_DEFS(gtkmm,gtk)
+_PINCLUDE(gtkmm/private/window_p.h)
+
+namespace Gtk
+{
+
+/** @defgroup Dialogs Dialogs
+ */
+
+_CC_INCLUDE(gtk/gtk.h)
+_WRAP_ENUM(DialogFlags, GtkDialogFlags)
+_WRAP_ENUM(ResponseType, GtkResponseType)
+
+/** Create popup windows.
+ *
+ * Dialog boxes are a convenient way to prompt the user for a small amount
+ * of input, eg. to display a message, ask a question, or anything else that
+ * does not require extensive effort on the user's part.
+ *
+ * gtkmm treats a dialog as a window split vertically. The top section is a
+ * vertical Gtk::Box, and is where widgets such as a Gtk::Label or a Gtk::Entry should be
+ * packed. The bottom area is known as the action_area. This is generally
+ * used for packing buttons into the dialog which may perform functions such
+ * as cancel, ok, or apply.
+ *
+ * The dialog can be 'modal' (that is, one which freezes the rest of the
+ * application from user input) - this can be specified in the Gtk::Dialog
+ * constructor.
+ *
+ * When adding buttons using add_button(), clicking the button will emit
+ * signal_response() with a "response id" you specified. You are encouraged
+ * to use the Gtk::ResponseType enum. If a dialog receives a delete event,
+ * the "response" signal will be emitted with a response id of
+ * Gtk::RESPONSE_DELETE_EVENT.
+ *
+ * If you want to block waiting for a dialog to return before returning control
+ * flow to your code, you can call run(). This function enters a
+ * recursive main loop and waits for the user to respond to the dialog, returning
+ * the response ID corresponding to the button the user clicked.
+ *
+ * @ingroup Dialogs
+ */
+class Dialog : public Window
+{
+  _CLASS_GTKOBJECT(Dialog,GtkDialog,GTK_DIALOG,Gtk::Window,GtkWindow)
+  _UNMANAGEABLE
+  _IGNORE(gtk_dialog_add_buttons)
+public:
+  _CTOR_DEFAULT()
+  explicit Dialog(const Glib::ustring& title, bool modal = false);
+  Dialog(const Glib::ustring& title, Gtk::Window& parent, bool modal = false);
+  /** @newin{3,16}
+   */
+  Dialog(const Glib::ustring& title, DialogFlags flags);
+  /** @newin{3,16}
+   */
+  Dialog(const Glib::ustring& title, Gtk::Window& parent, DialogFlags flags);
+
+  _WRAP_METHOD(void add_action_widget(Widget& child, int response_id), gtk_dialog_add_action_widget)
+  _WRAP_METHOD(Button* add_button(const Glib::ustring& button_text, int response_id), gtk_dialog_add_button)
+  _WRAP_METHOD(Button* add_button(const Gtk::StockID& stock_id, int response_id), gtk_dialog_add_button, deprecated "Use the add_button() that takes a Glib::ustring instead.")
+  _WRAP_METHOD(void set_response_sensitive(int response_id, bool setting = true), gtk_dialog_set_response_sensitive)
+  _WRAP_METHOD(void set_default_response(int response_id), gtk_dialog_set_default_response)
+  _WRAP_METHOD(Widget* get_widget_for_response(int response_id), gtk_dialog_get_widget_for_response)
+  _WRAP_METHOD(const Widget* get_widget_for_response(int response_id) const, gtk_dialog_get_widget_for_response, constversion)
+  _WRAP_METHOD(int get_response_for_widget(const Gtk::Widget& widget) const, gtk_dialog_get_response_for_widget)
+
+  _WRAP_METHOD(static bool alternative_button_order(const Glib::RefPtr<const Gdk::Screen>& screen), gtk_alternative_dialog_button_order, deprecated "This should no longer be used.")
+
+_DEPRECATE_IFDEF_START
+  /** Sets an alternative button order. If the gtk-alternative-button-order
+   * setting is set to true, the dialog buttons are reordered according to
+   * the order of the response ids in @a new_order.
+   *
+   * By default, GTK+ dialogs use the button order advocated by the Gnome
+   * <a href="http://developer.gnome.org/hig-book/stable/">Human
+   * Interface Guidelines</a> with the affirmative button at the far
+   * right, and the cancel button left of it. But the builtin GTK+ dialogs
+   * and MessageDialog<!-- -->s do provide an alternative button order,
+   * which is more suitable on some platforms, e.g. Windows.
+   *
+   * Use this function after adding all the buttons to your dialog.
+   *
+   * @param new_order an array of response ids of the dialog's buttons.
+   *
+   * @newin{2,6}
+   *
+   * @deprecated "This should no longer be used."
+   */
+  void set_alternative_button_order_from_array(const std::vector<int>& new_order);
+  _IGNORE(gtk_dialog_set_alternative_button_order_from_array, gtk_dialog_set_alternative_button_order)
+_DEPRECATE_IFDEF_END
+
+  _WRAP_METHOD(void response(int response_id), gtk_dialog_response)
+
+  /** Blocks in a recursive main loop until the dialog either emits the
+   * Gtk::Dialog::signal_response() signal, or is destroyed. If the dialog is
+   * destroyed during the call to run(), run() returns
+   * Gtk::RESPONSE_NONE. Otherwise, it returns the response ID from the
+   * signal_response() signal emission.
+   *
+   * Before entering the recursive main loop, run() calls
+   * Gtk::Widget::show() on the dialog for you. Note that you still
+   * need to show any children of the dialog yourself.
+   *
+   * During run(), the default behavior of Gtk::Widget::signal_delete_event()
+   * is disabled; if the dialog receives the signal_delete_event() signal, it will not be
+   * destroyed as windows usually are, and run() will return
+   * Gtk::RESPONSE_DELETE_EVENT. Also, during run() the dialog
+   * will be modal. You can force run() to return at any time by
+   * calling response() to emit the signal_response() signal. Destroying
+   * the dialog during run() is a very bad idea, because your
+   * post-run code won’t know whether the dialog was destroyed or not.
+   *
+   * After run() returns, you are responsible for hiding or
+   * destroying the dialog if you wish to do so.
+   *
+   * Typical usage of this function might be:
+   * @code
+   * int result = dialog.run();
+   * switch (result)
+   * {
+   * case Gtk::RESPONSE_ACCEPT:
+   *   do_application_specific_something();
+   *   break;
+   * default:
+   *   do_nothing_since_dialog_was_cancelled();
+   *   break;
+   * }
+   * @endcode
+   *
+   * Note that even though the recursive main loop gives the effect of a
+   * modal dialog (it prevents the user from interacting with other
+   * windows in the same window group while the dialog is run), callbacks
+   * such as timeouts, IO channel watches, DnD drops, etc, will
+   * be triggered during a run() call.
+   *
+   * @return Response ID.
+   */
+  _WRAP_METHOD(int run(), gtk_dialog_run)
+
+  // This previously returned an HButtonBox*, which broke on Maemo Fremantle.
+  // Changed post-2.18.2
+  _WRAP_METHOD(ButtonBox* get_action_area(), gtk_dialog_get_action_area, deprecated "Direct access to the action area is discouraged. Use add_button(), etc.")
+  _WRAP_METHOD(const ButtonBox* get_action_area() const, gtk_dialog_get_action_area, constversion, deprecated "Direct access to the action area is discouraged. Use add_button(), etc.")
+
+  _WRAP_METHOD(Box* get_vbox(), gtk_dialog_get_content_area, deprecated "Use get_content_area() instead.")
+  _WRAP_METHOD(const Box* get_vbox() const, gtk_dialog_get_content_area, constversion, deprecated "Use get_content_area() instead.")
+
+  _WRAP_METHOD(Box* get_content_area(), gtk_dialog_get_content_area)
+  _WRAP_METHOD(const Box* get_content_area() const, gtk_dialog_get_content_area, constversion)
+
+  _WRAP_METHOD(HeaderBar* get_header_bar(), gtk_dialog_get_header_bar) // transfer none
+  _WRAP_METHOD(const HeaderBar* get_header_bar() const, gtk_dialog_get_header_bar, constversion) // transfer none
+
+  _WRAP_SIGNAL(void response(int response_id), "response")
+
+  //_WRAP_PROPERTY("has-separator", bool) //deprecated.
+  _WRAP_PROPERTY("use-header-bar", bool)
+
+  _IGNORE_SIGNAL("close")
+};
+
+} //namespace Gtk

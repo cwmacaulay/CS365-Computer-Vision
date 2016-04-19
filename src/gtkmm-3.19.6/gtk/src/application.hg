@@ -1,0 +1,398 @@
+/* Copyright (C) 2003-2014 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free
+ * Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+
+_CONFIGINCLUDE(gtkmmconfig.h)
+
+#include <vector>
+
+#include <gtkmm/actiongroup.h>
+#include <giomm/application.h>
+#include <giomm/menumodel.h>
+#include <giomm/menu.h>
+#include <vector>
+#include <glibmm/arrayhandle.h>
+
+
+_DEFS(gtkmm,gtk)
+_PINCLUDE(giomm/private/application_p.h)
+
+#m4 _PUSH(SECTION_CC_PRE_INCLUDES)
+// Needed before gtkmm/private/application_p.h is included.
+typedef struct _GtkWindow GtkWindow;
+#m4 _POP()
+
+namespace Gtk
+{
+
+_WRAP_ENUM(ApplicationInhibitFlags, GtkApplicationInhibitFlags)
+
+class Window;
+
+//TODO: Add overview documentation discussing the techniques show in the examples in gtkmm-docmentation.
+//TODO: Add the screenshots from the C API?
+
+/** The Gtk::Application class handles many important aspects
+ * of a GTK+ application in a convenient fashion, without enforcing
+ * a one-size-fits-all application model.
+ *
+ * Currently, Gtk::Application handles GTK+ and gtkmm initialization, application
+ * uniqueness, session management, provides some basic scriptability and
+ * desktop shell integration by exporting actions and menus, and manages a
+ * list of toplevel windows whose life-cycle is automatically tied to the
+ * life-cycle of your application.
+ *
+ * While Gtk::Application works fine with plain Gtk::Window%s, it is recommended
+ * to use it together with Gtk::ApplicationWindow.
+ *
+ * When GDK threads are enabled, Gtk::Application will acquire the GDK
+ * lock when invoking actions that arrive from other processes.  The GDK
+ * lock is not touched for local action invocations.  In order to have
+ * actions invoked in a predictable context it is therefore recommended
+ * that the GDK lock be held while invoking actions locally with
+ * Gio::ActionGroup::activate_action().  The same applies to actions
+ * associated with Gtk::ApplicationWindow and to the Gio::Application::activate() and
+ * Gio::Application::open() methods.
+ *
+ * To set an application menu for a Gtk::Application, use
+ * set_app_menu(). The Gio::MenuModel that this method
+ * expects is usually constructed using Gtk::Builder.
+ * To specify a menubar that will be shown by
+ * Gtk::ApplicationWindow%s, use set_menubar(). Use the base
+ * Gio::ActionMap interface to add actions, to respond to the user
+ * selecting these menu items.
+ *
+ * GTK+ displays these menus as expected, depending on the platform
+ * the application is running on.
+ *
+ * Gtk::Application optionally registers with a session manager
+ * of the users session (if you set the register-session
+ * property) and offers various functionality related to the session
+ * life-cycle.
+ *
+ * An application can block various ways to end the session with
+ * the inhibit() method. Typical use cases for
+ * this kind of inhibiting are long-running, uninterruptible operations,
+ * such as burning a CD or performing a disk backup. The session
+ * manager may not honor the inhibitor, but it can be expected to
+ * inform the user about the negative consequences of ending the
+ * session while inhibitors are present.
+ *
+ * @newin{3,4}
+ */
+class Application
+  : public Gio::Application
+{
+protected:
+  _CLASS_GOBJECT(Application, GtkApplication, GTK_APPLICATION, Gio::Application, GApplication)
+
+protected:
+
+  /** Creates a new Application instance.
+   *
+   * This initializes gtkmm (and the GObject type system) for you.
+   *
+   * If non-empty, the application ID must be valid.  See
+   * g_application_id_is_valid().
+   *
+   * If no application ID is given then some features (most notably application
+   * uniqueness) will be disabled. A null application ID is only allowed with
+   * gtkmm 3.6 or later.
+   *
+   * @param application_id A valid application ID.
+   * @param flags The application flags.
+   *
+   * @newin{3,4}
+   */
+  explicit Application(const Glib::ustring& application_id = Glib::ustring(), Gio::ApplicationFlags flags = Gio::APPLICATION_FLAGS_NONE);
+  _IGNORE(gtk_application_new)
+  _IGNORE(gtk_application_window_new)
+                                                 
+
+  //This constructor does not correspond to anything in the C API.
+  //We added it so we can choose to always initialize gtkmm as early as possible.
+  //See https://bugzilla.gnome.org/show_bug.cgi?id=639925
+  /** Creates a new Application instance.
+   *
+   * This initializes gtkmm (and the GObject type system) for you, parsing the
+   * standard GTK+ command line arguments.
+   *
+   * You could instead use the constructor that takes no command line arguments
+   * and later supply the command line arguments to run().
+   *
+   * Note that all GTK+ functionality that is available via command line arguments
+   * can instead be achieved by setting suitable environment variables
+   * such as G_DEBUG.
+   *
+   * If non-empty, the application ID must be valid.  See
+   * g_application_id_is_valid().
+   *
+   * If no application ID is given then some features (most notably application
+   * uniqueness) will be disabled. A null application ID is only allowed with
+   * gtkmm 3.6 or later.
+   *
+   * @param argc The parameter received by your main() function.
+   * @param argv The parameter received by your main() function.
+   * @param application_id A valid application ID.
+   * @param flags The application flags.
+   *
+   * @newin{3,4}
+   */
+  explicit Application(int& argc, char**& argv, const Glib::ustring& application_id = Glib::ustring(), Gio::ApplicationFlags flags = Gio::APPLICATION_FLAGS_NONE);
+
+public:
+
+  /** Creates a new Application instance.
+   *
+   * This initializes gtkmm (and the GObject type system) for you.
+   *
+   * If non-empty, the application ID must be valid.  See
+   * g_application_id_is_valid().
+   *
+   * If no application ID is given then some features (most notably application
+   * uniqueness) will be disabled. A null application ID is only allowed with
+   * gtkmm 3.6 or later.
+   *
+   * @param application_id A valid application ID.
+   * @param flags The application flags.
+   *
+   * @newin{3,4}
+   */
+  static Glib::RefPtr<Application> create(const Glib::ustring& application_id = Glib::ustring(), Gio::ApplicationFlags flags = Gio::APPLICATION_FLAGS_NONE);
+
+  /** Creates a new Application instance.
+   *
+   * This initializes gtkmm (and the GObject type system) for you, parsing the
+   * standard GTK+ command line arguments.
+   *
+   * You could instead use the constructor that takes no command line arguments
+   * and later supply the command line arguments to run().
+   *
+   * Note that all GTK+ functionality that is available via command line arguments
+   * can instead be achieved by setting suitable environment variables
+   * such as G_DEBUG.
+   *
+   * If non-empty, the application ID must be valid.  See
+   * g_application_id_is_valid().
+   *
+   * If no application ID is given then some features (most notably application
+   * uniqueness) will be disabled. A null application ID is only allowed with
+   * gtkmm 3.6 or later.
+   *
+   * @param argc The parameter received by your main() function.
+   * @param argv The parameter received by your main() function.
+   * @param application_id A valid application ID.
+   *
+   * @param flags The application flags.
+   * @newin{3,4}
+   */
+  static Glib::RefPtr<Application> create(int& argc, char**& argv, const Glib::ustring& application_id = Glib::ustring(), Gio::ApplicationFlags flags = Gio::APPLICATION_FLAGS_NONE);
+
+#m4 _CONVERSION(`GList*',`std::vector<Window*>',`Glib::ListHandler<Window*>::list_to_vector($3, Glib::OWNERSHIP_NONE)')
+  _WRAP_METHOD(std::vector<Window*> get_windows(), gtk_application_get_windows)
+
+#m4 _CONVERSION(`GList*',`std::vector<const Window*>',`Glib::ListHandler<const Window*>::list_to_vector($3, Glib::OWNERSHIP_NONE)')
+  _WRAP_METHOD(std::vector<const Window*> get_windows() const, gtk_application_get_windows)
+
+  //Concerning the note on quit(), see https://bugzilla.gnome.org/show_bug.cgi?id=731126
+  /** Adds a window to the Gtk::Application.
+   *
+   * If all the windows managed by Gtk::Application are closed (hidden) or
+   * removed from the application then the call to run() will return.
+   *
+   * This call is equivalent to calling Gtk::Window::set_application().
+   *
+   * Normally, the connection between the application and the window
+   * will remain until the window is closed (hidden) or destroyed, but you can explicitly
+   * remove it with remove_window().
+   *
+   * @note If you call Gio::Application::quit() while a window is connected to
+   * the application, and then return from main() without removing the window
+   * from the application, the application's destructor will not be called.
+   *
+   * @newin{3,4}
+   *
+   * @param window A toplevel window to add to the application.
+   */
+  void add_window(Window& window);
+  _IGNORE(gtk_application_add_window)
+
+  _WRAP_METHOD(void remove_window(Window& window), gtk_application_remove_window)
+
+  /** Starts the application.
+   *
+   * The default implementation of this virtual function will simply run
+   * a main loop.
+   *
+   * It is an error to call this function if @a application is a proxy for
+   * a remote application.
+   *
+   * @param argc The argc from main() (or 0 if @a argv is <tt>0</tt>).
+   * @param argv The argv from main(), or <tt>0</tt>.
+   * @return The exit status.
+   *
+   * @newin{3,4}
+   */
+  int run(int argc, char** argv);
+
+  /** Starts the application.
+   *
+   * The default implementation of this virtual function will simply run
+   * a main loop.
+   *
+   * It is an error to call this function if @a application is a proxy for
+   * a remote application.
+   *
+   * @note If you call Gio::Application::quit() while a window is connected to
+   * the application, and then return from main() without removing the window
+   * from the application, the application's destructor will not be called.
+   *
+   * @param window The window to show. This method will return when the window is hidden.
+   * @param argc The argc from main() (or 0 if @a argv is <tt>0</tt>).
+   * @param argv The argv from main(), or <tt>0</tt>.
+   * @return The exit status.
+   *
+   * @newin{3,4}
+   */
+  int run(Window& window, int argc, char** argv);
+
+  //TODO: If argc and argv are necessary at all, document the need to call that constructor first.
+  //See https://bugzilla.gnome.org/show_bug.cgi?id=639925#c4
+  /** Starts the application.
+   *
+   * The default implementation of this virtual function will simply run
+   * a main loop.
+   *
+   * It is an error to call this function if @a application is a proxy for
+   * a remote application.
+   *
+   * @note If you call Gio::Application::quit() while a window is connected to
+   * the application, and then return from main() without removing the window
+   * from the application, the application's destructor will not be called.
+   *
+   * @param window The window to show. This method will return when the window is hidden.
+   * @return The exit status.
+   *
+   * @newin{3,4}
+   */
+  int run(Window& window);
+
+  //TODO: If argc and argv are necessary at all, document the need to call that constructor first.
+  //See https://bugzilla.gnome.org/show_bug.cgi?id=639925#c4
+  /** Starts the application.
+   *
+   * The default implementation of this virtual function will simply run
+   * a main loop.
+   *
+   * It is an error to call this function if @a application is a proxy for
+   * a remote application.
+   *
+   * @return The exit status.
+   *
+   * @newin{3,4}
+   */
+  int run();
+
+  _WRAP_METHOD(Glib::RefPtr<Gio::MenuModel> get_app_menu(), gtk_application_get_app_menu, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Gio::MenuModel> get_app_menu() const, gtk_application_get_app_menu, refreturn, constversion)
+
+  _WRAP_METHOD(void set_app_menu(const Glib::RefPtr<Gio::MenuModel>& app_menu), gtk_application_set_app_menu)
+
+  _WRAP_METHOD(Glib::RefPtr<Gio::MenuModel> get_menubar(), gtk_application_get_menubar, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Gio::MenuModel> get_menubar() const, gtk_application_get_menubar, refreturn, constversion)
+
+  _WRAP_METHOD(void set_menubar(const Glib::RefPtr<Gio::MenuModel>& menubar), gtk_application_set_menubar)
+
+  _WRAP_METHOD(void add_accelerator(const Glib::ustring& accelerator, const Glib::ustring& action_name, GVariant* parameter{?}), gtk_application_add_accelerator, deprecated "Use set_accels_for_action() instead.")
+
+  _WRAP_METHOD(void remove_accelerator(const Glib::ustring& action_name, GVariant* parameter{?}), gtk_application_remove_accelerator, deprecated "Use set_accels_for_action() or unset_accels_for_action() instead.")
+
+  _WRAP_METHOD(guint inhibit(Window& window, ApplicationInhibitFlags flags, const Glib::ustring& reason), gtk_application_inhibit)
+  _WRAP_METHOD(void uninhibit(guint cookie), gtk_application_uninhibit)
+  _WRAP_METHOD(bool is_inhibited(ApplicationInhibitFlags flags) const, gtk_application_is_inhibited)
+
+  _WRAP_METHOD(Window* get_window_by_id(guint id), gtk_application_get_window_by_id, refreturn)
+  _WRAP_METHOD(const Window* get_window_by_id(guint id) const, gtk_application_get_window_by_id, refreturn, constversion)
+
+  _WRAP_METHOD(Window* get_active_window(), gtk_application_get_active_window, refreturn)
+  _WRAP_METHOD(const Window* get_active_window() const, gtk_application_get_active_window, refreturn, constversion)
+
+#m4 _CONVERSION(`gchar**',`std::vector<Glib::ustring>',`Glib::ArrayHandler<Glib::ustring>::array_to_vector($3, Glib::OWNERSHIP_DEEP)')
+  _WRAP_METHOD(std::vector<Glib::ustring> list_action_descriptions() const, gtk_application_list_action_descriptions)
+
+#m4 _CONVERSION(`gchar**',`std::vector<Glib::ustring>',`Glib::ArrayHandler<Glib::ustring>::array_to_vector($3, Glib::OWNERSHIP_DEEP)')
+  _WRAP_METHOD(std::vector<Glib::ustring> get_accels_for_action(const Glib::ustring& detailed_action_name) const, gtk_application_get_accels_for_action)
+
+  _WRAP_METHOD(std::vector<Glib::ustring> get_actions_for_accel(const Glib::ustring& accel) const, gtk_application_get_actions_for_accel)
+
+#m4 _CONVERSION(`const std::vector<Glib::ustring>&',`const gchar*-const*',`Glib::ArrayHandler<Glib::ustring>::vector_to_array($3).data ()')
+  _WRAP_METHOD(void set_accels_for_action(const Glib::ustring& detailed_action_name, const std::vector<Glib::ustring>& accels), gtk_application_set_accels_for_action)
+
+  /** Sets a keyboard accelerator that will trigger the
+   * given action. It will be the primary 
+   * accelerator, which may be displayed in the UI.
+   *
+   * See unset_accels_for_action().
+   * 
+   * @param detailed_action_name A detailed action name, specifying an action
+   * and target to associate accelerators with.
+   * @param accel An accelerator in the format understood by gtk_accelerator_parse().
+   *
+   * @newin{3,12}
+   */
+  void set_accel_for_action(const Glib::ustring& detailed_action_name, const Glib::ustring& accel);
+
+  /** Unsets a keyboard accelerator that will trigger the
+   * given action. See set_accels_for_action() and set_accel_for_action().
+   * 
+   * @param detailed_action_name A detailed action name, specifying an action
+   * and target to associate accelerators with.
+   *
+   * @newin{3,12}
+   */
+  void unset_accels_for_action(const Glib::ustring& detailed_action_name);
+
+  _WRAP_METHOD(bool prefers_app_menu() const, gtk_application_prefers_app_menu)
+
+  _WRAP_METHOD(Glib::RefPtr<Gio::Menu> get_menu_by_id(const Glib::ustring& id), gtk_application_get_menu_by_id, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Gio::Menu> get_menu_by_id(const Glib::ustring& id) const, gtk_application_get_menu_by_id, refreturn, constversion)
+
+  _WRAP_PROPERTY("app-menu", Glib::RefPtr<Gio::MenuModel>)
+  _WRAP_PROPERTY("menubar", Glib::RefPtr<Gio::MenuModel>)
+  _WRAP_PROPERTY("register-session", bool)
+  _WRAP_PROPERTY("active-window", Window*)
+
+  _WRAP_SIGNAL(void window_added(Window* window), "window-added")
+  _WRAP_SIGNAL(void window_removed(Window* window), "window-removed")
+
+private:
+  /** This is just a way to call Glib::init() (which calls g_type_init()) before
+   * calling application_class_.init(), so that 
+   * gtk_application_get_type() will always succeed.
+   * See https://bugzilla.gnome.org/show_bug.cgi?id=639925
+   */
+  const Glib::Class& custom_class_init();
+  
+  void on_activate_add_and_show_main_window(Window* window);
+  void on_window_hide(Window* window);
+  
+  //We need these to call g_application_run(), 
+  //even if we have already called gtk_init().
+  int m_argc;
+  char** m_argv;
+};
+
+} // namespace Gtk

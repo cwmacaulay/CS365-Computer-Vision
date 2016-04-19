@@ -1,0 +1,54 @@
+/* Copyright 2003 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include <glibmm/vectorutils.h>
+
+#include <gtk/gtk.h> //For gtk_icon_theme_error_get_type().
+
+
+namespace Gtk
+{
+
+void IconTheme::set_search_path(const std::vector<Glib::ustring>& path)
+{
+  gtk_icon_theme_set_search_path(gobj(), const_cast<const char**>(Glib::ArrayHandler<Glib::ustring>::vector_to_array(path).data ()), path.size());
+}
+
+std::vector<Glib::ustring> IconTheme::get_search_path() const
+{
+  int temp_int = 0;
+  gchar** temp_path = nullptr;
+  gtk_icon_theme_get_search_path(const_cast<GtkIconTheme*>(gobj()), &temp_path, &temp_int);
+  return Glib::ArrayHandler<Glib::ustring>::array_to_vector(temp_path, temp_int, Glib::OWNERSHIP_DEEP);
+}
+
+std::vector<int> IconTheme::get_icon_sizes(const Glib::ustring& icon_name) const
+{
+  int* pArrayInts = gtk_icon_theme_get_icon_sizes(const_cast<GtkIconTheme*>(gobj()), icon_name.c_str());
+
+  //pArrayInts is null-terminated.
+  return Glib::ArrayHandler<int>::array_to_vector(pArrayInts, Glib::OWNERSHIP_SHALLOW);
+}
+
+std::vector<Glib::ustring> IconTheme::list_icons() const
+{
+  return Glib::ListHandler<Glib::ustring>::list_to_vector(gtk_icon_theme_list_icons(const_cast<GtkIconTheme*>(gobj()), nullptr /* means all icons according to the C documentation. */ ), Glib::OWNERSHIP_SHALLOW);
+}
+
+
+} // namespace Gtk
+

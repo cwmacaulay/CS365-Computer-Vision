@@ -1,0 +1,182 @@
+/* Copyright (C) 1998-2002 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+_CONFIGINCLUDE(gtkmmconfig.h)
+
+#include <gtkmm/widget.h>
+#include <gtkmm/celleditable.h>
+
+_DEFS(gtkmm,gtk)
+_PH_INCLUDE(gtkmm/private/object_p.h)
+_PH_INCLUDE(gtk/gtk.h)
+
+namespace Gtk
+{
+
+_WRAP_ENUM(CellRendererState, GtkCellRendererState)
+_WRAP_ENUM(CellRendererMode, GtkCellRendererMode)
+
+/** CellRenderers are used by Gtk::TreeView columns to render the Gtk::TreeModel column data appropriately.
+ * They display, and allow editing of, the values of their properties.
+ * In most cases, Gtk::TreeView::append_column() will automatically choose the appropriate renderer for the mode column's data type,
+ * so you will rarely need to worry about these classes.
+ *
+ * @ingroup TreeView
+ */
+class CellRenderer :
+  public Object
+{
+  _CLASS_GTKOBJECT(CellRenderer,GtkCellRenderer,GTK_CELL_RENDERER,Gtk::Object,GObject)
+public:
+
+  _IGNORE(gtk_cell_renderer_get_size) //Deprecated
+
+  _WRAP_METHOD(SizeRequestMode get_request_mode() const, gtk_cell_renderer_get_request_mode)
+  _WRAP_METHOD(void get_preferred_width(Widget& widget, int& minimum_width, int& natural_width) const, gtk_cell_renderer_get_preferred_width)
+  _WRAP_METHOD(void get_preferred_height_for_width(Widget& widget, int width, int& minimum_height, int& natural_height) const, gtk_cell_renderer_get_preferred_height_for_width)
+  _WRAP_METHOD(void get_preferred_height(Widget& widget, int& minimum_height, int& natural_height) const, gtk_cell_renderer_get_preferred_height)
+  _WRAP_METHOD(void get_preferred_width_for_height(Widget& widget, int height, int& minimum_width, int& natural_width) const, gtk_cell_renderer_get_preferred_width_for_height)
+  _WRAP_METHOD(void get_preferred_size(Widget& widget, Requisition& minimum_size, Requisition& natural_size) const, gtk_cell_renderer_get_preferred_size)
+
+  //TODO: Use a return value intead?
+  _WRAP_METHOD(void get_aligned_area(Widget& widget, CellRendererState flags, const Gdk::Rectangle& cell_area, Gdk::Rectangle& aligned_area), gtk_cell_renderer_get_aligned_area)
+
+  _WRAP_METHOD(void render(
+                  const ::Cairo::RefPtr< ::Cairo::Context>& cr,
+                  Widget& widget,
+                  const Gdk::Rectangle& background_area,
+                  const Gdk::Rectangle& cell_area,
+                  CellRendererState flags), gtk_cell_renderer_render)
+
+  _WRAP_METHOD(bool activate(
+                  GdkEvent* event,
+                  Widget& widget,
+                  const Glib::ustring& path,
+                  const Gdk::Rectangle& background_area,
+                  const Gdk::Rectangle& cell_area,
+                  CellRendererState flags), gtk_cell_renderer_activate)
+
+  _WRAP_METHOD(CellEditable* start_editing(
+                  GdkEvent* event, Widget& widget,
+                  const Glib::ustring& path,
+                  const Gdk::Rectangle& background_area,
+                  const Gdk::Rectangle& cell_area,
+                  CellRendererState flags = CellRendererState(0)), gtk_cell_renderer_start_editing)
+
+  _WRAP_METHOD(void set_fixed_size(int width, int height), gtk_cell_renderer_set_fixed_size)
+  _WRAP_METHOD(void get_fixed_size(int& width, int& height) const, gtk_cell_renderer_get_fixed_size)
+
+  _WRAP_METHOD(void set_alignment(float xalign, float yalign), gtk_cell_renderer_set_alignment)
+  _WRAP_METHOD(void get_alignment(float& xalign, float& yalign) const, gtk_cell_renderer_get_alignment)
+
+  _WRAP_METHOD(void set_padding(int xpad, int ypad), gtk_cell_renderer_set_padding)
+  _WRAP_METHOD(void get_padding(int& xpad, int& ypad) const, gtk_cell_renderer_get_padding)
+
+  _WRAP_METHOD(void set_visible(bool visible = true), gtk_cell_renderer_set_visible)
+  _WRAP_METHOD(bool get_visible() const, gtk_cell_renderer_get_visible)
+  _WRAP_METHOD(void set_sensitive(bool sensitive = true), gtk_cell_renderer_set_sensitive)
+  _WRAP_METHOD(bool get_sensitive() const, gtk_cell_renderer_get_sensitive)
+  _WRAP_METHOD(bool is_activatable() const, gtk_cell_renderer_is_activatable)
+
+  _WRAP_METHOD(void stop_editing(bool canceled = false), gtk_cell_renderer_stop_editing)
+
+  _WRAP_METHOD(StateFlags get_state(Widget& widget, CellRendererState cell_state) const, gtk_cell_renderer_get_state)
+
+
+  /** Translates the cell renderer state to StateFlags,
+   * based on the cell renderer and
+   * the given CellRendererState.
+   *
+   * @param cell_state The cell renderer state.
+   *
+   * @result The widget state flags applying to the cell renderer.
+   *
+   * @newin{3,0}
+   */
+  StateFlags get_state(CellRendererState cell_state) const;
+
+  /** Returns the property that this CellRenderer renders.
+   * For instance, property_text for CellRendererText, and property_active for CellRendererToggle
+   * Needs to be overridden in derived classes.
+   */
+  virtual Glib::PropertyProxy_Base _property_renderable();
+
+  _WRAP_SIGNAL(void editing_canceled(), editing_canceled)
+
+#m4 _CONVERSION(`const char*',`const Glib::ustring&',__GCHARP_TO_USTRING)
+
+  _WRAP_SIGNAL(void editing_started(CellEditable* editable, const Glib::ustring& path), editing_started)
+
+  _WRAP_PROPERTY("mode", CellRendererMode)
+  _WRAP_PROPERTY("visible", bool)
+  _WRAP_PROPERTY("sensitive", bool)
+  _WRAP_PROPERTY("xalign", float)
+  _WRAP_PROPERTY("yalign", float)
+  _WRAP_PROPERTY("xpad", unsigned int)
+  _WRAP_PROPERTY("ypad", unsigned int)
+  _WRAP_PROPERTY("width", int)
+  _WRAP_PROPERTY("height", int)
+  _WRAP_PROPERTY("is-expander", bool)
+  _WRAP_PROPERTY("is-expanded", bool)
+  _WRAP_PROPERTY("cell-background", Glib::ustring)
+  _WRAP_PROPERTY("cell-background-gdk", Gdk::Color, deprecated "Use property_cell_background_rgba() instead.")
+  _WRAP_PROPERTY("cell-background-rgba", Gdk::RGBA)
+  _WRAP_PROPERTY("cell-background-set", bool)
+  _WRAP_PROPERTY("editing", bool)
+
+protected:
+  _CTOR_DEFAULT()
+
+#m4begin
+dnl This extra conversion does the extra reference, often needed by code for vfuncs and signal.
+    _CONVERSION(`cairo_t*',`const ::Cairo::RefPtr< ::Cairo::Context>&',`::Cairo::RefPtr< ::Cairo::Context>(new ::Cairo::Context($3, false /* has_reference */))')
+#m4end
+
+#m4 _CONVERSION(`const GdkRectangle*',`const Gdk::Rectangle&',`Glib::wrap($3)')
+#m4 _CONVERSION(`GdkRectangle*',`const Gdk::Rectangle&',`Glib::wrap($3)')
+
+  _WRAP_VFUNC(SizeRequestMode get_request_mode() const, get_request_mode)
+  _WRAP_VFUNC(void get_preferred_width(Widget& widget, int& minimum_width, int& natural_width) const, get_preferred_width, custom_vfunc_callback)
+  _WRAP_VFUNC(void get_preferred_height_for_width(Widget& widget, int width, int& minimum_height, int& natural_height) const, get_preferred_height_for_width, custom_vfunc_callback)
+  _WRAP_VFUNC(void get_preferred_height(Widget& widget, int& minimum_height, int& natural_height) const, get_preferred_height, custom_vfunc_callback)
+  _WRAP_VFUNC(void get_preferred_width_for_height(Widget& widget, int height, int& minimum_width, int& natural_width) const, get_preferred_width_for_height, custom_vfunc_callback)
+
+  _WRAP_VFUNC(void render(
+                  const ::Cairo::RefPtr< ::Cairo::Context>& cr,
+                  Widget& widget,
+                  const Gdk::Rectangle& background_area,
+                  const Gdk::Rectangle& cell_area,
+                  CellRendererState flags), render)
+
+  _WRAP_VFUNC(bool activate(
+                  GdkEvent* event,
+                  Widget& widget,
+                  const Glib::ustring& path,
+                  const Gdk::Rectangle& background_area,
+                  const Gdk::Rectangle& cell_area,
+                  CellRendererState flags), activate)
+
+  _WRAP_VFUNC(CellEditable* start_editing(
+                  GdkEvent* event,
+                  Widget& widget,
+                  const Glib::ustring& path,
+                  const Gdk::Rectangle& background_area,
+                  const Gdk::Rectangle& cell_area,
+                  CellRendererState flags), start_editing)
+};
+
+} // namespace Gtk

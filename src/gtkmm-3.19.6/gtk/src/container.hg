@@ -1,0 +1,278 @@
+/* Copyright (C) 1998-2002 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include <vector>
+
+#include <gtkmm/widget.h>
+#include <gtkmm/childpropertyproxy.h>
+
+_DEFS(gtkmm,gtk)
+_PINCLUDE(gtkmm/private/widget_p.h)
+
+/** @defgroup Containers Container Widgets
+ * These widgets can be used to group other widgets together.
+ */
+
+/* we'll include gtkfeatures because we dont want to include the whole
+   gtk/gtk.h - this file is used by almost ALL our widgets, so dependencies
+   in minimum - adding things here will increase compile times ALOT */
+
+
+namespace Gtk
+{
+
+class Adjustment;
+class Label;
+
+/** Abstract container class
+ *
+ * This is the abstract container from which all gtk+ widgets which hold
+ * other items derive from.  It mainly houses virtual functions
+ * used for inserting and removing children.  Containers in gtk+
+ * may hold one item or many items depending on the implementation.
+ *
+ * This interface is used for all single item holding containers.
+ * Multi-item containers provide their own unique interface as their
+ * items are generally more complex.  The methods of the derived
+ * classes should be prefered over these.
+ *
+ * @ingroup Widgets
+ */
+class Container : public Widget
+{
+  _CLASS_GTKOBJECT(Container,GtkContainer,GTK_CONTAINER,Gtk::Widget,GtkWidget)
+  _IGNORE(gtk_container_child_set_valist, gtk_container_get_focus_chain)
+public:
+
+/* Application-level methods */
+
+  _WRAP_METHOD(void set_border_width(guint border_width),
+               gtk_container_set_border_width)
+
+  _WRAP_METHOD(guint get_border_width() const,
+               gtk_container_get_border_width)
+
+  //This is virtual so that we can override it in Gtk::ScrolledWindow.
+  //TODO: Remove the virtual keyword when we can break ABI,
+  //because the override in ScrolledWindow is no longer necessary.
+  virtual void add(Widget& widget);
+  _IGNORE(gtk_container_add)
+
+  _WRAP_METHOD_DOCS_ONLY(gtk_container_remove)
+  void remove(Widget& widget);
+  _IGNORE(gtk_container_remove)
+
+  _WRAP_METHOD(void set_resize_mode(ResizeMode resize_mode),
+               gtk_container_set_resize_mode,
+               deprecated "Resize modes are deprecated. They aren’t necessary anymore since frame clocks and might introduce obscure bugs if used.")
+
+  _WRAP_METHOD(ResizeMode get_resize_mode() const,
+               gtk_container_get_resize_mode,
+               deprecated "Resize modes are deprecated. They aren’t necessary anymore since frame clocks and might introduce obscure bugs if used.")
+
+  /// Request that contained widgets check their size
+  _WRAP_METHOD(void check_resize(), gtk_container_check_resize)
+
+  /** For instance,
+   * void on_foreach(Gtk::Widget* widget);
+   */
+  typedef sigc::slot<void, Widget&> ForeachSlot;
+
+  /** Operate on contained items.
+   *
+   * Invokes the @a slot on each non-internal child of the container. See
+   * forall() for details on what constitutes an
+   * "internal" child.  Most applications should use foreach()
+   * rather than forall().
+   */
+  void foreach(const ForeachSlot& slot);
+  _IGNORE(gtk_container_foreach)
+
+
+  /** Operate on contained items, including internal children.
+   *
+   * Invokes the @a slot on each child of the container, including children
+   * that are considered "internal" (implementation details of the
+   * container). "Internal" children generally weren't added by the user
+   * of the container, but were added by the container implementation
+   * itself.  Most applications should use foreach(),
+   * rather than forall().
+   *
+   * @newin{3,6}
+   */
+  void forall(const ForeachSlot& slot);
+  _IGNORE(gtk_container_forall)
+
+#m4 _CONVERSION(`GList*',`std::vector<Widget*>',`Glib::ListHandler<Widget*>::list_to_vector($3, Glib::OWNERSHIP_SHALLOW)')
+  _WRAP_METHOD(std::vector<Widget*> get_children(), gtk_container_get_children)
+#m4 _CONVERSION(`GList*',`std::vector<const Widget*>',`Glib::ListHandler<const Widget*>::list_to_vector($3, Glib::OWNERSHIP_SHALLOW)')
+  _WRAP_METHOD(std::vector<const Widget*> get_children() const, gtk_container_get_children)
+
+  _WRAP_METHOD(void propagate_draw(Widget& child, const ::Cairo::RefPtr< ::Cairo::Context>& cr), gtk_container_propagate_draw)
+
+#m4 _CONVERSION(`const std::vector<Widget*>&',`GList*',`Glib::ListHandler<Widget*>::vector_to_list($3).data ()')
+  _WRAP_METHOD(void set_focus_chain(const std::vector<Widget*>& focusable_widgets),
+               gtk_container_set_focus_chain)
+
+  // gtk_container_get_focus_chain() has been split up into two
+  // functions in order to make implicit container conversion possible.
+  bool has_focus_chain() const;
+  std::vector<Widget*> get_focus_chain();
+  std::vector<const Widget*> get_focus_chain() const;
+
+  _WRAP_METHOD(void unset_focus_chain(), gtk_container_unset_focus_chain)
+
+
+
+
+/* Widget-level methods */
+
+  _WRAP_METHOD(void set_reallocate_redraws(bool needs_redraws = true),
+               gtk_container_set_reallocate_redraws,
+               deprecated "Call Gtk::Widget::queue_draw() in your Gtk::Widget::signal_size_allocate() handler.")
+
+  /// Sets the focus on a child
+  _WRAP_METHOD(void set_focus_child(Widget& widget),gtk_container_set_focus_child)
+
+  _WRAP_METHOD(Widget* get_focus_child(), gtk_container_get_focus_child)
+  _WRAP_METHOD(const Widget* get_focus_child() const, gtk_container_get_focus_child, constversion)
+
+  _WRAP_METHOD(void set_focus_vadjustment(const Glib::RefPtr<Adjustment>& adjustment),
+               gtk_container_set_focus_vadjustment)
+
+  _WRAP_METHOD(Glib::RefPtr<Adjustment> get_focus_vadjustment(),
+               gtk_container_get_focus_vadjustment, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Adjustment> get_focus_vadjustment() const,
+               gtk_container_get_focus_vadjustment, refreturn, constversion)
+
+  _WRAP_METHOD(void set_focus_hadjustment(const Glib::RefPtr<Adjustment>& adjustment),
+               gtk_container_set_focus_hadjustment)
+
+  _WRAP_METHOD(Glib::RefPtr<Adjustment> get_focus_hadjustment(),
+               gtk_container_get_focus_hadjustment, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Adjustment> get_focus_hadjustment() const,
+               gtk_container_get_focus_hadjustment, refreturn, constversion)
+
+   /** @deprecated No replacement available.
+    */
+  _WRAP_METHOD(void resize_children(), gtk_container_resize_children, deprecated "No replacement available.")
+
+  _WRAP_METHOD(GType child_type() const, gtk_container_child_type)
+
+  _WRAP_METHOD(WidgetPath get_path_for_child(const Widget& child) const, gtk_container_get_path_for_child)
+
+  // Ignore functions such as gtk_container_class_install_child_property(),  which I think are for themes, like the GtkWidget style properties.
+  _IGNORE(gtk_container_class_install_child_property, gtk_container_class_find_child_property, gtk_container_class_list_child_properties,
+          gtk_container_add_with_properties, gtk_container_child_set, gtk_container_child_get, gtk_container_child_get_valist, gtk_container_child_get_property)
+
+
+  _WRAP_SIGNAL(void add(Widget* widget), "add")
+
+  //We use the optional custom_c_callback parameter with _WRAP_SIGNAL() here,
+  //so that we can write special code to check for deleted child widget parameters:
+  _WRAP_SIGNAL(void remove(Widget* widget), "remove", custom_c_callback)
+
+  _WRAP_SIGNAL(void check_resize(), "check_resize")
+  _WRAP_SIGNAL(void set_focus_child(Widget* widget), "set_focus_child")
+
+  void show_all_children(bool recursive = true);
+
+protected:
+  _CTOR_DEFAULT()
+
+  /** Implements child_type().
+   *
+   * The default implementation returns G_TYPE_NONE
+   */
+  _WRAP_VFUNC(GType child_type() const, child_type)
+
+  /** Invokes a callback on all children of the container.
+   *
+   * The callback may optionally be invoked also on children that are considered
+   * "internal" (implementation details of the container). "Internal" children
+   * generally  weren't added by the user of the container, but were added by the
+   * container implementation itself.
+   *
+   * Most applications should use foreach(), rather than forall().
+   *
+   * @param include_internals
+   * @param callback A callback.
+   * @param callback_data Callback user data
+   */
+  _WRAP_VFUNC(void forall(gboolean include_internals, GtkCallback callback, gpointer callback_data), forall)
+
+  //TODO: Return a ustring instead when we can break ABI.
+  /** Returns the composite name of a child widget.
+   *
+   * Composite widgets are  children of the container that are considered
+   * "internal" (implementation details of the container). "Internal" children
+   * generally weren't added by the user of the container, but were added by
+   * the container implementation itself.
+   *
+   * The caller is responsible for freeing the returned string.
+   *
+   * @param child The child widget.
+   * @returns The composite name of the child widget.
+   */
+  _WRAP_VFUNC(char* composite_name(GtkWidget* child), composite_name)
+
+  /** Sets a child property for this container and its child.
+   *
+   * Child properties are object properties that are not specific to either the
+   * container or the contained widget, but rather to their relation. Typical
+   * examples of child properties are the position or pack-type of a widget
+   * which is contained in a Gtk::Box.
+   *
+   * @param child The child property.
+   * @param property_id The ID of the child property to set.
+   * @param value The new value for the child property.
+   * @param pspec
+   */
+  _WRAP_VFUNC(void set_child_property(GtkWidget* child, guint property_id, const GValue* value, GParamSpec* pspec), set_child_property)
+
+  /** Returns a child property for this container and its child.
+   *
+   * Child  properties are object properties that are not specific to either the
+   * container or the contained widget, but rather to their relation. Typical
+   * examples of child properties are the position or pack-type of a widget
+   * which is contained in a Gtk::Box.
+   *
+   * @param child The child property.
+   * @param property_id The ID of the child property to get.
+   * @param value A GValue to fill with the child property's value.
+   * @param pspec
+   */
+  _WRAP_VFUNC(void get_child_property(GtkWidget* child, guint property_id, GValue* value, GParamSpec* pspec) const, get_child_property)
+
+  _WRAP_PROPERTY("border_width", guint)
+  _WRAP_PROPERTY("resize_mode", ResizeMode)
+  _WRAP_PROPERTY("child", Widget*)
+
+#m4begin
+dnl// Hook in special code to catch explicit uses of gtk_object_destroy() by
+dnl// GTK+ code, e.g. when receiving the GDK_DELETE event.  For details, look
+dnl// at Gtk::Widget_Class::dispose_vfunc_callback() in widget.ccg.
+dnl
+  _PUSH(SECTION_PCC_CLASS_INIT_DEFAULT_SIGNAL_HANDLERS)
+  _SECTION(SECTION_PH_DEFAULT_SIGNAL_HANDLERS)
+    static void remove_callback_normal(GtkContainer* self, GtkWidget* p0);
+  _POP()
+#m4end
+
+};
+
+} // namespace Gtk

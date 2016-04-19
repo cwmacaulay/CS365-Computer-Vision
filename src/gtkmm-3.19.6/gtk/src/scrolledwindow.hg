@@ -1,0 +1,146 @@
+/*
+ * Copyright (C) 1998-2002 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include <gtkmm/bin.h>
+_DEFS(gtkmm,gtk)
+_PINCLUDE(gtkmm/private/bin_p.h)
+
+namespace Gtk
+{
+
+class Adjustment;
+class Scrollbar;
+
+/** Adds scrollbars to its child widget.
+ *
+ * This container accepts a single child widget. It adds scrollbars to the child widget and optionally draws a beveled frame around the child widget.
+ * The scrolled window can work in two ways:
+ * <OL>
+ * <LI>Some widgets have native scrolling support; these widgets handle certain Gtk::Adjustment signals. Widgets with native scroll support include Gtk::TreeView, Gtk::TextView, and Gtk::Layout.</LI>
+ * <LI>For widgets that lack native scrolling support, such as Gtk::Grid, Gtk::Box, and so on, the widget will be placed inside a Gtk::Viewport.</LI>
+ * </OL>
+ *
+ * The position of the scrollbars is controlled by the scroll adjustments. See Gtk::Adjustment for the fields in an adjustment - for Gtk::Scrollbar, used by Gtk::ScrolledWindow,
+ * the "value" field represents the position of the scrollbar, which must be between the "lower" field and "upper - page_size."
+ * The "page_size" field represents the size of the visible scrollable area.
+ * The "step_increment" and "page_increment" fields are used when the user asks to step down (using the small stepper arrows) or page down (using for example the PageDown key).
+ *
+ * If a Gtk::ScrolledWindow doesn't behave quite as you would like, or doesn't have exactly the right layout, it's very possible to set up your own scrolling with Gtk::Scrollbar and, for example, a Gtk::Grid.
+ *
+ * @ingroup Widgets
+ * @ingroup Containers
+ */
+class ScrolledWindow : public Bin
+{
+  _CLASS_GTKOBJECT(ScrolledWindow,GtkScrolledWindow,GTK_SCROLLED_WINDOW,Gtk::Bin,GtkBin)
+
+public:
+  _CTOR_DEFAULT
+  _WRAP_CTOR(ScrolledWindow(const Glib::RefPtr<Adjustment>& hadjustment, const Glib::RefPtr<Adjustment>& vadjustment), gtk_scrolled_window_new)
+
+  //TODO: Add unset_*adjustment().
+  //But the C API does not do that. murrayc.
+  _WRAP_METHOD(void set_hadjustment(const Glib::RefPtr<Adjustment>& hadjustment), gtk_scrolled_window_set_hadjustment)
+  _WRAP_METHOD(void set_vadjustment(const Glib::RefPtr<Adjustment>& vadjustment), gtk_scrolled_window_set_vadjustment)
+
+  _WRAP_METHOD(Glib::RefPtr<Adjustment> get_hadjustment(), gtk_scrolled_window_get_hadjustment, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Adjustment> get_hadjustment() const, gtk_scrolled_window_get_hadjustment, refreturn, constversion)
+  _WRAP_METHOD(Glib::RefPtr<Adjustment> get_vadjustment(), gtk_scrolled_window_get_vadjustment, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Adjustment> get_vadjustment() const, gtk_scrolled_window_get_vadjustment, refreturn, constversion)
+
+  _WRAP_METHOD(void set_policy(PolicyType hscrollbar_policy, PolicyType vscrollbar_policy), gtk_scrolled_window_set_policy)
+  _WRAP_METHOD(void get_policy(PolicyType& hscrollbar_policy, PolicyType& vscrollbar_policy) const, gtk_scrolled_window_get_policy)
+
+  _WRAP_METHOD(void set_placement(CornerType window_placement), gtk_scrolled_window_set_placement)
+  _WRAP_METHOD(void unset_placement(), gtk_scrolled_window_unset_placement)
+  _WRAP_METHOD(CornerType get_placement() const, gtk_scrolled_window_get_placement)
+
+  _WRAP_METHOD(void set_shadow_type(ShadowType type), gtk_scrolled_window_set_shadow_type)
+  _WRAP_METHOD(ShadowType get_shadow_type() const, gtk_scrolled_window_get_shadow_type)
+
+  ///Puts the child inside a Gtk::Viewport if it doesn't have native scrolling capability.
+  void add(Gtk::Widget& widget) override;
+  _IGNORE(gtk_scrolled_window_add_with_viewport)
+
+  //TODO: When we can break ABI/API, make Bin::remove() virtual and delete remove_with_viewport().
+  //      Add a ScrolledWindow::remove() override, and let it do approximately
+  //      what remove_with_viewport() does. https://bugzilla.gnome.org/show_bug.cgi?id=685739#c2
+  /** Remove the contained object, possibly also a Gtk::Viewport.
+   * Since this can only hold one object it is not necessary to specify which
+   * object to remove, like containers that don't derive from Gtk::Bin.
+   *
+   * This method is useful if you have added a widget without native scrolling
+   * capability, and ScrolledWindow::add() has created a Gtk::Viewport.
+   *
+   * If the child of the ScrolledWindow is a Gtk::Viewport, remove_with_viewport()
+   * removes the Viewport's child from the Viewport, and removes the Viewport from the
+   * ScrolledWindow. The Viewport is destroyed in two cases.
+   * <OL>
+   * <LI>If it was created by ScrolledWindow::add().</LI>
+   * <LI>If it was created as a managed widget
+   *     (<code>Gtk::Viewport* vp = Gtk::manage(new Gtk::Viewport(hadj, vadj));</code>).</LI>
+   * </OL>
+   *
+   * @newin{3,8}
+   */
+  void remove_with_viewport();
+
+#m4 _CONVERSION(`GtkWidget*',`Scrollbar*',`Glib::wrap((GtkScrollbar*)$3)')
+#m4 _CONVERSION(`GtkWidget*',`const Scrollbar*',`Glib::wrap((GtkScrollbar*)$3)')
+  _WRAP_METHOD(Scrollbar* get_vscrollbar(), gtk_scrolled_window_get_vscrollbar)
+  _WRAP_METHOD(const Scrollbar* get_vscrollbar() const, gtk_scrolled_window_get_vscrollbar)
+
+  _WRAP_METHOD(Scrollbar* get_hscrollbar(), gtk_scrolled_window_get_hscrollbar)
+  _WRAP_METHOD(const Scrollbar* get_hscrollbar() const, gtk_scrolled_window_get_hscrollbar)
+
+  _WRAP_METHOD(int get_min_content_width() const, gtk_scrolled_window_get_min_content_width)
+  _WRAP_METHOD(void set_min_content_width(int width), gtk_scrolled_window_set_min_content_width)
+  _WRAP_METHOD(int get_min_content_height() const, gtk_scrolled_window_get_min_content_height)
+  _WRAP_METHOD(void set_min_content_height(int height), gtk_scrolled_window_set_min_content_height)
+
+  _WRAP_METHOD(void set_kinetic_scrolling(bool kinetic_scrolling = true), gtk_scrolled_window_set_kinetic_scrolling)
+  _WRAP_METHOD(bool get_kinetic_scrolling() const, gtk_scrolled_window_get_kinetic_scrolling)
+
+  _WRAP_METHOD(void set_capture_button_press(bool capture_button_press), gtk_scrolled_window_set_capture_button_press)
+  _WRAP_METHOD(bool get_capture_button_press() const, gtk_scrolled_window_get_capture_button_press)
+
+  _WRAP_METHOD(void set_overlay_scrolling(bool overlay_scrolling = true), gtk_scrolled_window_set_overlay_scrolling)
+  _WRAP_METHOD(bool get_overlay_scrolling() const, gtk_scrolled_window_get_overlay_scrolling)
+
+  //Keybinding signals:
+  _IGNORE_SIGNAL("scroll_child")
+  _IGNORE_SIGNAL("move_focus_out")
+
+  // no_default_handler because the wrapped C signals have no default handlers.
+  _WRAP_SIGNAL(void edge_overshot(Gtk::PositionType pos), "edge-overshot", no_default_handler)
+  _WRAP_SIGNAL(void edge_reached(Gtk::PositionType pos), "edge-reached", no_default_handler)
+
+  _WRAP_PROPERTY("hadjustment", Glib::RefPtr<Adjustment>)
+  _WRAP_PROPERTY("vadjustment", Glib::RefPtr<Adjustment>)
+  _WRAP_PROPERTY("hscrollbar-policy", PolicyType)
+  _WRAP_PROPERTY("vscrollbar-policy", PolicyType)
+  _WRAP_PROPERTY("window-placement", CornerType)
+  _WRAP_PROPERTY("window-placement-set", bool, deprecated "This value is ignored and the property_window_placement() value is always honored.")
+  _WRAP_PROPERTY("shadow-type", ShadowType)
+  _WRAP_PROPERTY("min-content-width", int)
+  _WRAP_PROPERTY("min-content-height", int)
+  _WRAP_PROPERTY("kinetic-scrolling", bool)
+  _WRAP_PROPERTY("overlay-scrolling", bool)
+};
+
+} //namespace Gtk

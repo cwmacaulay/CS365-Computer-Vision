@@ -1,0 +1,92 @@
+/* Charles Macaulay
+   02-23-2016
+   CS 365
+   
+   initDB.cpp
+
+   This program comprises step 1 of the CBIR.
+
+   Input: an image database
+   Output: .txt file with Image DB feature vectors
+
+   Code modeled on getDirectoryListing.cpp by Bruce Maxwell
+*/
+
+#include <cstdio>
+#include <cstdlib>
+#include <dirent.h>
+#include <cstring>
+#include "opencv2/objdetect/objdetect.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/opencv.hpp"
+
+using namespace cv;
+
+
+
+int main(int argc, char *argv[]) {
+	char dirname[256];
+	DIR *dirp;
+	struct dirent *dp;
+
+	// by default, look at the current directory
+	strcpy(dirname, ".");
+
+	// if the user provided a directory path, use it
+	if(argc > 1) {
+		strcpy(dirname, argv[1]);
+	}
+	printf("Accessing directory %s\n\n", dirname);
+
+	// open the directory
+	dirp = opendir( dirname );
+	if( dirp == NULL ) {
+		printf("Cannot open directory %s\n", dirname);
+		exit(-1);
+	}
+
+	// loop over the contents of the directory, looking for images
+	while( (dp = readdir(dirp)) != NULL ) {
+		if( strstr(dp->d_name, ".jpg") ||
+		    strstr(dp->d_name, ".JPG") || 
+		    strstr(dp->d_name, ".png") ||
+		    strstr(dp->d_name, ".PNG") ||
+		    strstr(dp->d_name, ".ppm") ||
+		    strstr(dp->d_name, ".tif") ) {
+
+		  // printf("image file: %s\n", dp->d_name);
+		  Mat src;
+		  // read the image
+		  src = imread(dp->d_name);
+		  // test if the read was successful
+		  if(src.data == NULL) {
+		    printf("Unable to read image %s\n", dp->d_name);
+		    exit(-1);
+		  }
+		  
+		  // print out information about the image
+		  printf("filename:         %s\n", dp->d_name);
+		  printf("Image size:       %d rows x %d columns\n", (int)src.size().height, (int)src.size().width);
+		  printf("Image dimensions: %d\n", (int)src.channels());
+		  printf("Image depth:      %d bytes/channel\n", (int)src.elemSize()/src.channels());
+
+		}
+	}
+
+	// close the directory
+	closedir(dirp);
+		
+	printf("\nTerminating\n");
+
+	return(0);
+}
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1006 @@
+/* Copyright (C) 2002, 2003 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+_CONFIGINCLUDE(gtkmmconfig.h)
+
+#include <vector>
+
+#include <pangomm/context.h>
+#include <pangomm/layout.h>
+
+#ifdef GTKMM_ATKMM_ENABLED
+#include <atkmm/object.h>
+#include <atkmm/implementor.h>
+#endif //GTKMM_ATKMM_ENABLED
+
+#include <gtkmm/object.h>
+#include <gtkmm/buildable.h>
+#include <gdkmm/event.h>
+#include <gdkmm/types.h>
+#include <gdkmm/window.h>
+#include <gdkmm/dragcontext.h>
+#include <gdkmm/pixbuf.h>
+#include <gdkmm/screen.h>
+#include <gtkmm/enums.h>
+#include <gdkmm/display.h>
+#include <gtkmm/targetlist.h>
+#include <gtkmm/clipboard.h>
+#include <gtkmm/requisition.h>
+#include <gtkmm/stylecontext.h>
+#include <gtkmm/widgetpath.h>
+#include <giomm/actiongroup.h>
+
+_DEFS(gtkmm,gtk)
+_PINCLUDE(gtkmm/private/object_p.h)
+
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+extern "C"
+{
+typedef struct _GtkTargetEntry GtkTargetEntry;
+}
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+
+namespace Gtk
+{
+
+_CC_INCLUDE(gtk/gtk.h)
+_WRAP_ENUM(DestDefaults, GtkDestDefaults)
+_WRAP_ENUM(WidgetHelpType, GtkWidgetHelpType)
+_WRAP_ENUM(DragResult, GtkDragResult)
+
+class Action;
+class Style;
+class AccelGroup;
+class Adjustment;
+class Window;
+class Container;
+class Settings;
+class Tooltip;
+class StockID; //deprecated.
+
+// Gtk::Allocation is a typedef of Gdk::Rectangle because GtkAllocation is
+// a typedef of GdkRectangle.
+typedef Gdk::Rectangle Allocation;
+
+/** @defgroup Widgets Widgets
+ */
+
+//TODO: Deal with the GtkObject->GObject change:
+/** Abstract Widget (Base class for all widgets)
+ *
+ * As the base class of all widgets this contains all of the properties
+ * and methods common to all widgets.  It is an abstract class that
+ * can not be instantiated.
+ *
+ * Important part of widgets are the *_event signals and virtual methods
+ * that every widget have. Those are events coming directly from gdk and
+ * thus also from XLib. By overriding those virtual methods you can
+ * trap everything a widget can ever do.
+ * In order to capture events from a widget, the event mask must
+ * first be set with ().
+ *
+ * Only widgets with a Gdk::Window on the server side are allowed to
+ * capture events.  Widgets in the Gtk::Misc group for example lack
+ * a Gdk::Window.
+ */
+class Widget
+: public Object,
+  public Buildable
+#ifdef GTKMM_ATKMM_ENABLED
+  ,public Atk::Implementor
+#endif //GTKMM_ATKMM_ENABLED
+{
+  _CLASS_GTKOBJECT(Widget,GtkWidget,GTK_WIDGET,Object,GObject)
+  _IMPLEMENTS_INTERFACE(Buildable)
+  _IMPLEMENTS_INTERFACE(Atk::Implementor, ifdef GTKMM_ATKMM_ENABLED)
+  _IGNORE(gtk_widget_set_visual, gtk_widget_destroy, gtk_widget_destroyed, gtk_widget_hide_on_delete,
+          gtk_widget_style_get_valist, gtk_widget_list_accel_closures, gtk_widget_style_get)
+public:
+  friend class Main;
+  _CUSTOM_DTOR
+  _DOCUMENT_DTOR(Destroys the widget. The widget will be automatically removed from the parent container.)
+
+  _WRAP_METHOD(void show(), gtk_widget_show)
+  _WRAP_METHOD(void show_now(), gtk_widget_show_now)
+  _WRAP_METHOD(void hide(), gtk_widget_hide)
+
+  _WRAP_METHOD(void show_all(), gtk_widget_show_all)
+
+/* QUEUE DRAWS */
+
+  _WRAP_METHOD(void queue_draw(), gtk_widget_queue_draw)
+  _WRAP_METHOD(void queue_draw_area(int x, int y, int width, int height), gtk_widget_queue_draw_area)
+  _WRAP_METHOD(void queue_draw_region(const ::Cairo::RefPtr<const ::Cairo::Region>& region), gtk_widget_queue_draw_region)
+  _WRAP_METHOD(void queue_resize(), gtk_widget_queue_resize)
+  _WRAP_METHOD(void queue_allocate(), gtk_widget_queue_allocate)
+
+  _WRAP_METHOD(void size_allocate(const Allocation& allocation), gtk_widget_size_allocate)
+
+  _WRAP_METHOD(void size_allocate(const Allocation& allocation, int baseline), gtk_widget_size_allocate_with_baseline)
+
+  _IGNORE(gtk_widget_size_request) //deprecated
+
+  _WRAP_METHOD(SizeRequestMode get_request_mode() const, gtk_widget_get_request_mode)
+  _WRAP_METHOD(void get_preferred_width(int& minimum_width, int& natural_width) const, gtk_widget_get_preferred_width)
+  _WRAP_METHOD(void get_preferred_height_for_width(int width, int& minimum_height, int& natural_height) const, gtk_widget_get_preferred_height_for_width)
+  _WRAP_METHOD(void get_preferred_height_for_width(int width, int& minimum_height, int& natural_height, int& minimum_baseline, int& natural_baseline) const, gtk_widget_get_preferred_height_and_baseline_for_width)
+  _WRAP_METHOD(void get_preferred_height(int& minimum_height, int& natural_height) const, gtk_widget_get_preferred_height)
+  _WRAP_METHOD(void get_preferred_width_for_height(int height, int& minimum_width, int& natural_width) const, gtk_widget_get_preferred_width_for_height)
+  _WRAP_METHOD(void get_preferred_size(Requisition& minimum_size, Requisition& natural_size) const, gtk_widget_get_preferred_size)
+
+
+  _WRAP_METHOD(void add_accelerator(const Glib::ustring& accel_signal, const Glib::RefPtr<AccelGroup>& accel_group,
+               guint accel_key, Gdk::ModifierType accel_mods, AccelFlags accel_flags), gtk_widget_add_accelerator)
+
+  _WRAP_METHOD(bool remove_accelerator(const Glib::RefPtr<AccelGroup>& accel_group,
+               guint accel_key, Gdk::ModifierType accel_mods), gtk_widget_remove_accelerator)
+  _WRAP_METHOD(void set_accel_path(const Glib::ustring& accel_path,
+                                   const Glib::RefPtr<AccelGroup>& accel_group),
+               gtk_widget_set_accel_path)
+
+  //GList* gtk_widget_list_accel_closures();
+
+  _WRAP_METHOD(bool mnemonic_activate(bool group_cycling), gtk_widget_mnemonic_activate)
+
+  _IGNORE(gtk_widget_can_activate_accel)
+  //Probably not useful. Too C-specific: _WRAP_METHOD(bool can_activate_accel(guint signal_id) const, gtk_widget_can_activate_accel)
+
+  //TODO: Use C++ type
+  _WRAP_METHOD(bool event(GdkEvent* gdk_event), gtk_widget_event)
+  _WRAP_METHOD(int send_expose(GdkEvent* gdk_event), gtk_widget_send_expose)
+  _WRAP_METHOD(bool send_focus_change(GdkEvent* gdk_event), gtk_widget_send_focus_change)
+  _WRAP_METHOD(bool activate(), gtk_widget_activate)
+
+  //TODO: When we can break ABI/API, change to void reparent(Container& new_parent).
+  // gtk_widget_reparent() is deprecated, but we want to keep Gtk::Widget::reparent().
+  /** Moves a widget from one Gtk::Container to another, handling reference
+   * count issues to avoid destroying the widget.
+   * 
+   * @param new_parent A Gtk::Container to move the widget into.
+   */
+  void reparent(Widget& new_parent);
+  _IGNORE(gtk_widget_reparent)
+
+  bool intersect(const Gdk::Rectangle& area) const;
+  _WRAP_METHOD(bool intersect(const Gdk::Rectangle& area, Gdk::Rectangle& intersection) const, gtk_widget_intersect)
+
+#m4 _CONVERSION(`cairo_region_t*',`::Cairo::RefPtr< ::Cairo::Region>',`::Cairo::RefPtr< ::Cairo::Region>(new ::Cairo::Region($3, true /* do not take ref */))')
+
+  _WRAP_METHOD(::Cairo::RefPtr< ::Cairo::Region> region_intersect(const ::Cairo::RefPtr< ::Cairo::Region>& region) const, gtk_widget_region_intersect,
+               deprecated "Use get_allocation() and Cairo::Region::intersect(const Cairo::RectangleInt&) to get the same behavior.")
+
+  _WRAP_METHOD(void freeze_child_notify(), gtk_widget_freeze_child_notify)
+  _WRAP_METHOD(void child_notify(const Glib::ustring& child_property), gtk_widget_child_notify)
+  _WRAP_METHOD(void thaw_child_notify(), gtk_widget_thaw_child_notify)
+
+  _WRAP_METHOD(void set_can_focus(bool can_focus = true), gtk_widget_set_can_focus)
+  _WRAP_METHOD(bool get_can_focus() const, gtk_widget_get_can_focus)
+  _WRAP_METHOD(bool has_focus() const, gtk_widget_has_focus)
+
+  _WRAP_METHOD(bool is_focus() const, gtk_widget_is_focus)
+  _WRAP_METHOD(bool has_visible_focus() const, gtk_widget_has_visible_focus)
+  _WRAP_METHOD(void grab_focus(), gtk_widget_grab_focus)
+  _WRAP_METHOD(void set_focus_on_click(bool focus_on_click = true), gtk_widget_set_focus_on_click)
+  _WRAP_METHOD(bool get_focus_on_click() const, gtk_widget_get_focus_on_click)
+  _WRAP_METHOD(void set_can_default(bool can_default = true), gtk_widget_set_can_default)
+  _WRAP_METHOD(bool get_can_default() const, gtk_widget_get_can_default)
+  _WRAP_METHOD(bool has_default() const, gtk_widget_has_default)
+  _WRAP_METHOD(void grab_default(), gtk_widget_grab_default)
+  _WRAP_METHOD(void set_receives_default(bool receives_default = true), gtk_widget_set_receives_default)
+  _WRAP_METHOD(bool get_receives_default() const, gtk_widget_get_receives_default)
+  _WRAP_METHOD(bool has_grab() const, gtk_widget_has_grab)
+  _WRAP_METHOD(bool device_is_shadowed(const Glib::RefPtr<const Gdk::Device>& device), gtk_widget_device_is_shadowed)
+
+
+  /** Block events to everything else than this widget and its children. This
+   * way you can get modal behaviour (usually not recommended). One practical
+   * example could be when implementing a key-binding widget that needs
+   * exclusive access to the key combination that the user presses next.
+   *
+   * Calls to add_modal_grab should be paired with calls to remove_modal_grab.
+   */
+  void add_modal_grab();
+
+  /** Remove the modal grab of the widget in case it was previously grabbed.
+   */
+  void remove_modal_grab();
+
+  /** Retrieve the widget which is currently grabbing all events.
+   */
+  static Widget* get_current_modal_grab();
+
+  _WRAP_METHOD(void set_name(const Glib::ustring& name), gtk_widget_set_name)
+  void unset_name();
+  _WRAP_METHOD(Glib::ustring get_name() const, gtk_widget_get_name)
+
+  _WRAP_METHOD(void set_state(StateType state), gtk_widget_set_state, deprecated "Use set_state_flags() instead.")
+  _WRAP_METHOD(StateType get_state() const, gtk_widget_get_state, deprecated "Use get_state_flags() instead.")
+
+  _WRAP_METHOD(void set_state_flags(StateFlags flags, bool clear = true), gtk_widget_set_state_flags)
+  _WRAP_METHOD(void unset_state_flags(StateFlags flags), gtk_widget_unset_state_flags)
+  _WRAP_METHOD(StateFlags get_state_flags() const, gtk_widget_get_state_flags)
+
+  _WRAP_METHOD(void set_sensitive(bool sensitive = true), gtk_widget_set_sensitive)
+  _WRAP_METHOD(bool get_sensitive() const, gtk_widget_get_sensitive)
+  _WRAP_METHOD(bool is_sensitive() const, gtk_widget_is_sensitive)
+  _WRAP_METHOD(void set_visible(bool visible = true), gtk_widget_set_visible)
+  _WRAP_METHOD(bool get_visible() const, gtk_widget_get_visible)
+  _WRAP_METHOD(bool is_visible() const, gtk_widget_is_visible)
+  _WRAP_METHOD(bool get_has_window() const, gtk_widget_get_has_window)
+  _WRAP_METHOD(bool get_is_toplevel() const, gtk_widget_is_toplevel)
+  _WRAP_METHOD(bool get_is_drawable() const, gtk_widget_is_drawable)
+  _WRAP_METHOD(bool get_realized() const, gtk_widget_get_realized)
+  _WRAP_METHOD(bool get_mapped() const, gtk_widget_get_mapped)
+  _WRAP_METHOD(void set_app_paintable(bool app_paintable = true), gtk_widget_set_app_paintable)
+  _WRAP_METHOD(bool get_app_paintable() const, gtk_widget_get_app_paintable)
+  _WRAP_METHOD(void set_double_buffered(bool double_buffered = true), gtk_widget_set_double_buffered,
+    deprecated "This does not work under non-X11 backends, and it should not be used in newly written code.")
+  _WRAP_METHOD(bool get_double_buffered() const, gtk_widget_get_double_buffered,
+    deprecated "This should not be used in newly written code.")
+
+  _WRAP_METHOD(void set_redraw_on_allocate(bool redraw_on_allocate = true),
+               gtk_widget_set_redraw_on_allocate)
+
+  _WRAP_METHOD(void set_child_visible(bool visible = true), gtk_widget_set_child_visible)
+  _WRAP_METHOD(bool get_child_visible() const, gtk_widget_get_child_visible)
+
+  _WRAP_METHOD(Glib::RefPtr<Gdk::Window> get_window(), gtk_widget_get_window, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Gdk::Window> get_window() const, gtk_widget_get_window, refreturn, constversion)
+
+  _WRAP_METHOD(void register_window(const Glib::RefPtr<Gdk::Window>& window), gtk_widget_register_window)
+  _WRAP_METHOD(void unregister_window(const Glib::RefPtr<Gdk::Window>& window), gtk_widget_unregister_window)
+
+  _WRAP_METHOD(int get_allocated_width() const, gtk_widget_get_allocated_width)
+  _WRAP_METHOD(int get_allocated_height() const, gtk_widget_get_allocated_height)
+  _WRAP_METHOD(int get_allocated_baseline() const, gtk_widget_get_allocated_baseline)
+  _WRAP_METHOD(void get_allocated_size(Allocation& allocation, int& baseline) const, gtk_widget_get_allocated_size)
+
+  /** Retrieves the widget's location.
+   * Note, when implementing a Container: a widget's allocation will be its "adjusted" allocation,
+   * that is, the widget's parent container typically calls size_allocate() with an allocation,
+   * and that allocation is then adjusted (to handle margin and alignment for example) before
+   * assignment to the widget. get_allocation() returns the adjusted allocation that was actually
+   * assigned to the widget. The adjusted allocation is guaranteed to be completely contained
+   * within the size_allocate() allocation, however. So a Container is guaranteed that its
+   * children stay inside the assigned bounds, but not that they have exactly the bounds the
+   * container assigned. There is no way to get the original allocation assigned by
+   * size_allocate(), since it isn't stored. If a container implementation needs that information
+   * it will have to track it itself.
+   *
+   * @return The widget's allocated area.
+   */
+  Allocation get_allocation() const;
+  _IGNORE(gtk_widget_get_allocation)
+
+#m4 _CONVERSION(`const Allocation&',`const GtkAllocation*',`($3).gobj()')
+#m4 _CONVERSION(`const Allocation&',`const GdkRectangle*',`($3).gobj()')
+  _WRAP_METHOD(void set_allocation(const Allocation& allocation), gtk_widget_set_allocation)
+
+  _WRAP_METHOD(void set_clip(const Allocation& clip), gtk_widget_set_clip)
+  
+  /** Retrieves the widget’s clip area.
+   *
+   * The clip area is the area in which all of the widget's drawing will
+   * happen. Other toolkits call it the bounding box.
+   *
+   * Historically, in GTK+ the clip area has been equal to the allocation
+   * retrieved via get_allocation().
+   *
+   * @newin{3,14}
+   */
+  Allocation get_clip() const;
+  _IGNORE(gtk_widget_get_clip)
+
+  _WRAP_METHOD(Container* get_parent(), gtk_widget_get_parent)
+  _WRAP_METHOD(const Container* get_parent() const, gtk_widget_get_parent, constversion)
+
+  _WRAP_METHOD(Glib::RefPtr<Gdk::Window> get_parent_window(), gtk_widget_get_parent_window, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Gdk::Window> get_parent_window() const, gtk_widget_get_parent_window, refreturn, constversion)
+  _WRAP_METHOD(void set_parent_window(const Glib::RefPtr<const Gdk::Window>& parent_window), gtk_widget_set_parent_window)
+
+  _WRAP_METHOD(bool child_focus(DirectionType direction), gtk_widget_child_focus)
+
+  _WRAP_METHOD(bool keynav_failed(DirectionType direction), gtk_widget_keynav_failed)
+  _WRAP_METHOD(void error_bell(), gtk_widget_error_bell)
+
+  _WRAP_METHOD(void set_size_request(int width = -1, int  height = -1), gtk_widget_set_size_request)
+  _WRAP_METHOD(void get_size_request(int& width, int& height) const, gtk_widget_get_size_request)
+
+  _WRAP_METHOD(void set_events(Gdk::EventMask events), gtk_widget_set_events)
+  _WRAP_METHOD(void add_events(Gdk::EventMask events), gtk_widget_add_events)
+
+  _WRAP_METHOD(void set_device_events(const Glib::RefPtr<const Gdk::Device>& device, Gdk::EventMask events), gtk_widget_set_device_events)
+  _WRAP_METHOD(void add_device_events(const Glib::RefPtr<const Gdk::Device>& device, Gdk::EventMask events), gtk_widget_add_device_events)
+
+  _WRAP_METHOD(void set_opacity(double opacity), gtk_widget_set_opacity)
+  _WRAP_METHOD(double get_opacity() const, gtk_widget_get_opacity)
+
+  _WRAP_METHOD(void set_device_enabled(const Glib::RefPtr<Gdk::Device>& device, bool enabled = true), gtk_widget_set_device_enabled)
+  _WRAP_METHOD(bool get_device_enabled(const Glib::RefPtr<const Gdk::Device>& device) const, gtk_widget_get_device_enabled)
+
+  _WRAP_METHOD(Container* get_toplevel(), gtk_widget_get_toplevel)
+  _WRAP_METHOD(const Container* get_toplevel() const, gtk_widget_get_toplevel, constversion)
+
+  _WRAP_METHOD(Widget* get_ancestor(GType widget_type), gtk_widget_get_ancestor)
+  _WRAP_METHOD(const Widget* get_ancestor(GType widget_type) const, gtk_widget_get_ancestor, constversion)
+
+
+  _WRAP_METHOD(Glib::RefPtr<Gdk::Visual> get_visual(), gtk_widget_get_visual, refreturn)
+
+  _WRAP_METHOD(Glib::RefPtr<Gdk::Screen> get_screen(), gtk_widget_get_screen, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Gdk::Screen> get_screen() const, gtk_widget_get_screen, refreturn, constversion)
+
+  _WRAP_METHOD(bool has_screen() const, gtk_widget_has_screen)
+
+  _WRAP_METHOD(int get_scale_factor() const, gtk_widget_get_scale_factor)
+
+  _WRAP_METHOD(Glib::RefPtr<Gdk::Display> get_display(), gtk_widget_get_display, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Gdk::Display> get_display() const, gtk_widget_get_display, refreturn, constversion)
+
+  _WRAP_METHOD(Glib::RefPtr<Gdk::Window> get_root_window(), gtk_widget_get_root_window, refreturn, deprecated "Use Gdk::Screen::get_root_window() instead.")
+  _WRAP_METHOD(Glib::RefPtr<const Gdk::Window> get_root_window() const, gtk_widget_get_root_window, refreturn, constversion, deprecated "Use Gdk::Screen::get_root_window() instead.")
+
+  _WRAP_METHOD(Glib::RefPtr<Settings> get_settings(), gtk_widget_get_settings, refreturn)
+
+  _WRAP_METHOD(Glib::RefPtr<Clipboard> get_clipboard(const Glib::ustring& selection), gtk_widget_get_clipboard, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Clipboard> get_clipboard(const Glib::ustring& selection) const, gtk_widget_get_clipboard, refreturn, constversion)
+
+  _WRAP_METHOD(bool get_hexpand() const, gtk_widget_get_hexpand)
+  _WRAP_METHOD(void set_hexpand(bool expand = true), gtk_widget_set_hexpand)
+  _WRAP_METHOD(bool get_hexpand_set() const, gtk_widget_get_hexpand_set)
+  _WRAP_METHOD(void set_hexpand_set(bool set = true), gtk_widget_set_hexpand_set)
+  _WRAP_METHOD(bool get_vexpand() const, gtk_widget_get_vexpand)
+  _WRAP_METHOD(void set_vexpand(bool expand = true), gtk_widget_set_vexpand)
+  _WRAP_METHOD(bool get_vexpand_set() const, gtk_widget_get_vexpand_set)
+  _WRAP_METHOD(void set_vexpand_set(bool set = true), gtk_widget_set_vexpand_set)
+  _WRAP_METHOD(void queue_compute_expand(), gtk_widget_queue_compute_expand)
+  _WRAP_METHOD(bool compute_expand(Orientation orientation), gtk_widget_compute_expand)
+
+  _WRAP_METHOD(bool get_support_multidevice() const, gtk_widget_get_support_multidevice)
+  _WRAP_METHOD(void set_support_multidevice(bool support_multidevice = true), gtk_widget_set_support_multidevice)
+
+  _WRAP_METHOD(Glib::RefPtr<Atk::Object> get_accessible(), gtk_widget_get_accessible, refreturn, ifdef GTKMM_ATKMM_ENABLED)
+  _WRAP_METHOD(Glib::RefPtr<const Atk::Object> get_accessible() const, gtk_widget_get_accessible, refreturn, constversion, ifdef GTKMM_ATKMM_ENABLED)
+
+  _WRAP_METHOD(Align get_halign() const, gtk_widget_get_halign)
+  _WRAP_METHOD(void set_halign(Align align), gtk_widget_set_halign)
+  _WRAP_METHOD(Align get_valign() const, gtk_widget_get_valign)
+  _WRAP_METHOD(Align get_valign_with_baseline() const, gtk_widget_get_valign_with_baseline)
+  _WRAP_METHOD(void set_valign(Align align), gtk_widget_set_valign)
+  _WRAP_METHOD(int get_margin_left() const, gtk_widget_get_margin_left, deprecated "Use get_margin_start() instead.")
+  _WRAP_METHOD(void set_margin_left(int margin), gtk_widget_set_margin_left, deprecated "Use set_margin_start() instead.")
+  _WRAP_METHOD(int get_margin_right() const, gtk_widget_get_margin_right, deprecated "Use get_margin_end() instead.")
+  _WRAP_METHOD(void set_margin_right(int margin), gtk_widget_set_margin_right, deprecated "Use set_margin_end() instead.")
+  _WRAP_METHOD(int get_margin_start() const, gtk_widget_get_margin_start)
+  _WRAP_METHOD(void set_margin_start(int margin), gtk_widget_set_margin_start)
+  _WRAP_METHOD(int get_margin_end() const, gtk_widget_get_margin_end)
+  _WRAP_METHOD(void set_margin_end(int margin), gtk_widget_set_margin_end)
+  _WRAP_METHOD(int get_margin_top() const, gtk_widget_get_margin_top)
+  _WRAP_METHOD(void set_margin_top(int margin), gtk_widget_set_margin_top)
+  _WRAP_METHOD(int get_margin_bottom() const, gtk_widget_get_margin_bottom)
+  _WRAP_METHOD(void set_margin_bottom(int margin), gtk_widget_set_margin_bottom)
+
+  _WRAP_METHOD(Gdk::EventMask get_events() const, gtk_widget_get_events)
+  _WRAP_METHOD(Gdk::EventMask get_device_events(const Glib::RefPtr<const Gdk::Device>& device) const, gtk_widget_get_device_events)
+  _WRAP_METHOD(void get_pointer(int &x, int &y) const, gtk_widget_get_pointer, deprecated "Use Gdk::Window::get_device_position instead.")
+  _WRAP_METHOD(bool is_ancestor(Widget &ancestor) const, gtk_widget_is_ancestor)
+
+  _WRAP_METHOD(bool translate_coordinates(Widget& dest_widget,
+					       int src_x, int src_y,
+					       int& dest_x, int& dest_y), gtk_widget_translate_coordinates)
+
+  _IGNORE(gtk_widget_set_style, gtk_widget_get_style, gtk_widget_has_rc_style, gtk_widget_ensure_style,
+    gtk_widget_modify_style, gtk_widget_get_modifier_style,
+    gtk_widget_reset_rc_styles) //deprecated broadly in favour of StyleContext.;
+
+  _WRAP_METHOD(void override_color(const Gdk::RGBA& color{.}, StateFlags state{.} = STATE_FLAG_NORMAL), gtk_widget_override_color,
+               deprecated "Use a custom style provider and style classes instead.")
+
+_DEPRECATE_IFDEF_START
+  /** Undoes the effect of previous calls to override_color().
+   *
+   * @newin{3,0}
+   * @deprecated Use a custom style provider and style classes instead.
+   *
+   * @param state The state for which to use the color of the user's theme.
+   */
+  void unset_color(StateFlags state = STATE_FLAG_NORMAL);
+_DEPRECATE_IFDEF_END
+
+  _WRAP_METHOD(void override_background_color(const Gdk::RGBA& color{.}, StateFlags state{.} = STATE_FLAG_NORMAL), gtk_widget_override_background_color,
+               deprecated "Use a custom style provider and style classes instead.")
+
+_DEPRECATE_IFDEF_START
+  /** Undoes the effect of previous calls to override_background_color().
+   *
+   * @newin{3,0}
+   * @deprecated Use a custom style provider and style classes instead.
+   *
+   * @param state The state for which to use the background color of the user's theme.
+   */
+  void unset_background_color(StateFlags state = STATE_FLAG_NORMAL);
+_DEPRECATE_IFDEF_END
+
+  _WRAP_METHOD(void override_font(const Pango::FontDescription& font_desc), gtk_widget_override_font,
+               deprecated "Use a custom style provider and style classes instead.")
+
+_DEPRECATE_IFDEF_START
+  /** Undoes the effect of previous calls to override_font().
+   *
+   * @newin{3,0}
+   * @deprecated Use a custom style provider and style classes instead.
+   */
+  void unset_font();
+_DEPRECATE_IFDEF_END
+
+  _WRAP_METHOD(void override_symbolic_color(const Glib::ustring& name, const Gdk::RGBA& color), gtk_widget_override_symbolic_color,
+               deprecated "Use a custom style provider and style classes instead.")
+
+_DEPRECATE_IFDEF_START
+  /** Undoes the effect of previous calls to override_symbolic_color().
+   *
+   * @newin{3,0}
+   * @deprecated Use a custom style provider and style classes instead.
+   *
+   * @param name The name of the symbolic color to fetch from the user's theme.
+   */
+  void unset_symbolic_color(const Glib::ustring& name);
+_DEPRECATE_IFDEF_END
+
+  _WRAP_METHOD(void override_cursor(const Gdk::RGBA& cursor, const Gdk::RGBA& secondary_cursor), gtk_widget_override_cursor,
+               deprecated "Use a custom style provider and style classes instead.")
+
+_DEPRECATE_IFDEF_START
+  /** Undoes the effect of previous calls to override_cursor().
+   *
+   * @newin{3,0}
+   * @deprecated Use a custom style provider and style classes instead.
+   */
+  void unset_cursor();
+_DEPRECATE_IFDEF_END
+
+  _IGNORE(gtk_widget_modify_fg, gtk_widget_modify_bg, gtk_widget_modify_font, gtk_widget_modify_text,
+     gtk_widget_modify_base, gtk_widget_modify_cursor) //deprecated
+
+  _WRAP_METHOD(void reset_style(), gtk_widget_reset_style)
+
+  //The parameter name is "the_property_name" to avoid a warning because there is a method with the "property_name" name.
+  /** Gets the value of a style property of @a widget.
+   * @param the_property_name The name of a style property.
+   * @param value Location to return the property value.
+   */
+  template <class PropertyType>
+  void get_style_property(const Glib::ustring& the_property_name, PropertyType& value) const;
+
+  _WRAP_METHOD(Glib::RefPtr<Pango::Context> create_pango_context(), gtk_widget_create_pango_context)
+  _WRAP_METHOD(Glib::RefPtr<Pango::Context> get_pango_context(), gtk_widget_get_pango_context, refreturn)
+
+  _WRAP_METHOD(void set_font_options(const ::Cairo::FontOptions& options), gtk_widget_set_font_options)
+  /** Undoes the effect of previous calls to set_font_options().
+   *
+   * @newin{3,20}
+   */
+  void unset_font_options();
+  // This returns a const, so we assume that we must copy it:
+  #m4 _CONVERSION(`const cairo_font_options_t*', `::Cairo::FontOptions', `::Cairo::FontOptions(const_cast<cairo_font_options_t*>($3), false /* take_ownership */)')
+  _WRAP_METHOD(::Cairo::FontOptions get_font_options() const, gtk_widget_get_font_options)
+
+  _WRAP_METHOD(Glib::RefPtr<Pango::Layout> create_pango_layout(const Glib::ustring& text), gtk_widget_create_pango_layout)
+
+  _IGNORE(gtk_widget_render_icon) //deprecated.
+  _WRAP_METHOD(Glib::RefPtr<Gdk::Pixbuf> render_icon_pixbuf(const StockID& stock_id, IconSize size), gtk_widget_render_icon_pixbuf, deprecated "Use IconTheme::load_icon() instead.")
+
+  _WRAP_METHOD(void set_composite_name(const Glib::ustring& name), gtk_widget_set_composite_name, deprecated "Use gtk_widget_class_set_template(), or don't use this API at all.")
+#ifndef GTKMM_DISABLE_DEPRECATED
+  /** @deprecated Use gtk_widget_class_set_template(), or don't use this API at all.
+   */
+  void unset_composite_name();
+#endif // GTKMM_DISABLE_DEPRECATED
+  _WRAP_METHOD(Glib::ustring get_composite_name() const, gtk_widget_get_composite_name, deprecated "Use gtk_widget_class_set_template(), or don't use this API at all.")
+
+  _WRAP_METHOD(static void push_composite_child(), gtk_widget_push_composite_child, deprecated "This API never really worked well and was mostly unused, now we have a more complete mechanism for composite children, see gtk_widget_class_set_template().")
+  _WRAP_METHOD(static void pop_composite_child(), gtk_widget_pop_composite_child, deprecated "Use gtk_widget_class_set_template(), or don't use this API at all.")
+
+/* Directionality of Text */
+
+  _WRAP_METHOD(void set_direction(TextDirection dir), gtk_widget_set_direction)
+  _WRAP_METHOD(TextDirection get_direction() const, gtk_widget_get_direction)
+
+  _WRAP_METHOD(static void set_default_direction(TextDirection dir), gtk_widget_set_default_direction)
+  _WRAP_METHOD(static TextDirection get_default_direction(), gtk_widget_get_default_direction)
+
+  _WRAP_METHOD(void shape_combine_region(const ::Cairo::RefPtr<const ::Cairo::Region>& region), gtk_widget_shape_combine_region)
+  _WRAP_METHOD(void input_shape_combine_region(const ::Cairo::RefPtr<const ::Cairo::Region>& region), gtk_widget_input_shape_combine_region)
+
+  _WRAP_METHOD(WidgetPath get_path() const, gtk_widget_get_path)
+  _IGNORE(gtk_widget_path, gtk_widget_class_path) //deprecated
+
+#m4 _CONVERSION(`GList*',`std::vector<Widget*>',`Glib::ListHandler<Widget*>::list_to_vector($3, Glib::OWNERSHIP_SHALLOW)')
+ _WRAP_METHOD(std::vector<Widget*> list_mnemonic_labels(), gtk_widget_list_mnemonic_labels)
+#m4 _CONVERSION(`GList*',`std::vector<const Widget*>',`Glib::ListHandler<const Widget*>::list_to_vector($3, Glib::OWNERSHIP_SHALLOW)')
+ _WRAP_METHOD(std::vector<const Widget*> list_mnemonic_labels() const, gtk_widget_list_mnemonic_labels)
+ _WRAP_METHOD(void add_mnemonic_label(Widget& label), gtk_widget_add_mnemonic_label)
+ _WRAP_METHOD(void remove_mnemonic_label(Widget& label), gtk_widget_remove_mnemonic_label)
+
+  //TODO: Should drag_get_data() be const?
+  _WRAP_METHOD(void drag_get_data(const Glib::RefPtr<Gdk::DragContext>& context, const Glib::ustring& target, guint32 time), gtk_drag_get_data)
+
+  _WRAP_METHOD(void drag_highlight(), gtk_drag_highlight)
+  _WRAP_METHOD(void drag_unhighlight(), gtk_drag_unhighlight)
+
+  //TODO: Change the defaults? Maybe we should use ALL for DestDefaults. See other drag_dest_set() methods here and in other widgets.
+  void drag_dest_set(DestDefaults flags = DestDefaults(0), Gdk::DragAction actions = Gdk::DragAction(0));
+  void drag_dest_set(const std::vector<TargetEntry>& targets, DestDefaults flags = DEST_DEFAULT_ALL, Gdk::DragAction actions = Gdk::ACTION_COPY);
+  _IGNORE(gtk_drag_dest_set)
+
+  _WRAP_METHOD(void drag_dest_set_proxy(const Glib::RefPtr<Gdk::Window>& proxy_window, Gdk::DragProtocol protocol, bool use_coordinates), gtk_drag_dest_set_proxy)
+  _WRAP_METHOD(void drag_dest_unset(), gtk_drag_dest_unset)
+  _WRAP_METHOD(Glib::ustring drag_dest_find_target(const Glib::RefPtr<Gdk::DragContext>& context, const Glib::RefPtr<TargetList>& target_list) const, gtk_drag_dest_find_target)
+  Glib::ustring drag_dest_find_target(const Glib::RefPtr<Gdk::DragContext>& context) const;
+
+  _WRAP_METHOD(Glib::RefPtr<TargetList> drag_dest_get_target_list(), gtk_drag_dest_get_target_list, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const TargetList> drag_dest_get_target_list() const, gtk_drag_dest_get_target_list, refreturn, constversion)
+  _WRAP_METHOD(void drag_dest_set_target_list(const Glib::RefPtr<TargetList>& target_list), gtk_drag_dest_set_target_list)
+
+  _WRAP_METHOD(void drag_dest_add_text_targets(), gtk_drag_dest_add_text_targets)
+  _WRAP_METHOD(void drag_dest_add_image_targets(), gtk_drag_dest_add_image_targets)
+  _WRAP_METHOD(void drag_dest_add_uri_targets(), gtk_drag_dest_add_uri_targets)
+
+  void drag_source_set(const std::vector<TargetEntry>& targets, Gdk::ModifierType start_button_mask = Gdk::MODIFIER_MASK, Gdk::DragAction actions = Gdk::ACTION_COPY);
+  _IGNORE(gtk_drag_source_set)
+
+  _WRAP_METHOD(void drag_source_unset(), gtk_drag_source_unset)
+
+  _WRAP_METHOD(void drag_source_set_icon(const Glib::RefPtr<Gdk::Pixbuf>& pixbuf), gtk_drag_source_set_icon_pixbuf)
+  _WRAP_METHOD(void drag_source_set_icon(const StockID& stock_id), gtk_drag_source_set_icon_stock, deprecated "Use the drag_source_set_icon() that takes a Glib::ustring instead.")
+  _WRAP_METHOD(void drag_source_set_icon(const Glib::ustring& icon_name), gtk_drag_source_set_icon_name)
+
+  _WRAP_METHOD(void drag_source_add_text_targets(), gtk_drag_source_add_text_targets)
+  _WRAP_METHOD(void drag_source_add_uri_targets(), gtk_drag_source_add_uri_targets)
+  _WRAP_METHOD(void drag_source_add_image_targets(), gtk_drag_source_add_image_targets)
+
+  _WRAP_METHOD(Glib::RefPtr<Gdk::DragContext> drag_begin(const Glib::RefPtr<TargetList>& targets, Gdk::DragAction actions, int button, GdkEvent* gdk_event), gtk_drag_begin, refreturn,
+               deprecated "Use the drag_begin() that takes x,y coordinates.")
+  _WRAP_METHOD(Glib::RefPtr<Gdk::DragContext> drag_begin(const Glib::RefPtr<TargetList>& targets, Gdk::DragAction actions, int button, GdkEvent* gdk_event, int x, int y), gtk_drag_begin_with_coordinates, refreturn)
+  _WRAP_METHOD(bool drag_check_threshold(int start_x, int start_y, int current_x, int current_y), gtk_drag_check_threshold)
+
+  //These should be a method of Gdk::DragContext, but gdkmm can't depend on gtkmm.
+  static Widget* drag_get_source_widget(const Glib::RefPtr<Gdk::DragContext>& context);
+  void drag_set_as_icon(const Glib::RefPtr<Gdk::DragContext>& context, int hot_x, int hot_y);
+
+  _WRAP_METHOD(void queue_resize_no_redraw(), gtk_widget_queue_resize_no_redraw)
+  //TODO: _WRAP_METHOD(GdkFrameClock* get_frame_clock(), gtk_widget_get_frame_clock)
+  _WRAP_METHOD(bool get_no_show_all() const, gtk_widget_get_no_show_all)
+  _WRAP_METHOD(void set_no_show_all(bool no_show_all = true), gtk_widget_set_no_show_all)
+
+  //Used when implementing containers:
+  _WRAP_METHOD(void set_parent(Widget& parent), gtk_widget_set_parent)
+  _WRAP_METHOD(void unparent(), gtk_widget_unparent)
+
+  //TODO: When exactly do we need to custom containers need to call map() on the child widgets?
+  //Most containers that derive from GtkContainer do not need to, but GtkNotebook does.
+  _WRAP_METHOD(void map(), gtk_widget_map)
+  _WRAP_METHOD(void unmap(), gtk_widget_unmap)
+
+#ifndef GTKMM_DISABLE_DEPRECATED
+  /** Draws a text caret on @a cr at @a location.
+   * This is not a style function but merely a convenience function for drawing
+   * the standard cursor shape.
+   *
+   * @deprecated Use StyleContext::render_insertion_cursor() instead.
+   */
+  void draw_insertion_cursor(const ::Cairo::RefPtr< ::Cairo::Context>& cr, const Gdk::Rectangle& location, bool is_primary, TextDirection direction, bool draw_arrow = true);
+#endif // GTKMM_DISABLE_DEPRECATED
+  _IGNORE(gtk_draw_insertion_cursor)
+
+  // Gtk+ 2.12 tooltip API
+  _WRAP_METHOD(void set_tooltip_window(Window& custom_window), gtk_widget_set_tooltip_window)
+  _WRAP_METHOD(Window* get_tooltip_window(), gtk_widget_get_tooltip_window)
+  _WRAP_METHOD(void trigger_tooltip_query(), gtk_widget_trigger_tooltip_query)
+  _WRAP_METHOD(void set_tooltip_text(const Glib::ustring& text), gtk_widget_set_tooltip_text)
+  _WRAP_METHOD(Glib::ustring get_tooltip_text() const, gtk_widget_get_tooltip_text)
+  _WRAP_METHOD(void set_tooltip_markup(const Glib::ustring& markup), gtk_widget_set_tooltip_markup)
+  _WRAP_METHOD(Glib::ustring get_tooltip_markup() const, gtk_widget_get_tooltip_markup)
+  _WRAP_METHOD(void set_has_tooltip(bool has_tooltip = TRUE), gtk_widget_set_has_tooltip)
+  _WRAP_METHOD(bool get_has_tooltip() const, gtk_widget_get_has_tooltip)
+
+  int get_width() const;
+  int get_height() const;
+
+  _WRAP_METHOD(bool is_composited() const, gtk_widget_is_composited)
+
+  _WRAP_METHOD(bool in_destruction() const, gtk_widget_in_destruction)
+
+  _WRAP_METHOD(Glib::RefPtr<StyleContext> get_style_context(), gtk_widget_get_style_context, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<Gtk::StyleContext> get_style_context() const, gtk_widget_get_style_context, refreturn, constversion)
+
+  _WRAP_METHOD(Gdk::ModifierType get_modifier_mask(Gdk::ModifierIntent intent), gtk_widget_get_modifier_mask)
+
+//TODO: guint gtk_widget_add_tick_callback (GtkWidget *widget,  GtkTickCallback callback, gpointer user_data, GDestroyNotify   notify);
+//TODO: void gtk_widget_remove_tick_callback (GtkWidget *widget,  guint id);
+
+  //This is mostly only needed by the class itself, so it could be protected,
+  //but it is sometimes helpful to call it from outside:
+  _WRAP_METHOD(void insert_action_group(const Glib::ustring& name, const Glib::RefPtr<Gio::ActionGroup>& group), gtk_widget_insert_action_group)
+
+  /** Removes a group from the widget.
+   * See insert_action_group().
+   * 
+   * @param name The prefix for actions.
+   *
+   * @newin{3,10}
+   */
+  void remove_action_group(const Glib::ustring& name);
+
+  _WRAP_METHOD(Glib::RefPtr<Gio::ActionGroup> get_action_group(const Glib::ustring& prefix), gtk_widget_get_action_group, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Gio::ActionGroup> get_action_group(const Glib::ustring& prefix) const, gtk_widget_get_action_group, refreturn, constversion)
+
+#m4 _CONVERSION(`const gchar**',`std::vector<Glib::ustring>',`Glib::ArrayHandler<Glib::ustring>::array_to_vector($3, Glib::OWNERSHIP_SHALLOW)')
+  _WRAP_METHOD(std::vector<Glib::ustring> list_action_prefixes() const, gtk_widget_list_action_prefixes)
+
+  _WRAP_METHOD(void set_font_map(const Glib::RefPtr<Pango::FontMap>& font_map), gtk_widget_set_font_map)
+  _WRAP_METHOD(Glib::RefPtr<Pango::FontMap> get_font_map(), gtk_widget_get_font_map, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Pango::FontMap> get_font_map() const, gtk_widget_get_font_map, refreturn, constversion)
+
+  _WRAP_SIGNAL(void show(),"show")
+  _WRAP_SIGNAL(void hide(),"hide", custom_c_callback)
+
+  /// Emitted on mapping of a widget to the screen.
+  //- See {flags.mapped}.
+  _WRAP_SIGNAL(void map(),"map")
+
+  //- See {flags.mapped}.
+  _WRAP_SIGNAL(void unmap(),"unmap")
+
+  /// Emitted on realization of a widget.
+  //- See {flags.realized}.  This is also responsible for
+  //- setting {flags.realized} when it is done.  Therefore,
+  //- when overriding the impl method, you should call the
+  //- default realize method.
+  _WRAP_SIGNAL(void realize(),"realize")
+
+  //- See {flags.realized}.  This should not be called by the user.
+  //_WRAP(meth|sig|impl,void unrealize_(),gtk_widget_unrealize,"unrealize")
+  _WRAP_SIGNAL(void unrealize(),"unrealize")
+
+#m4 _CONVERSION(`Allocation&',`GdkRectangle*',`($2)($3.gobj())')
+#m4 _CONVERSION(`GdkRectangle*',`Allocation&',`($2)(Glib::wrap($3))')
+  _WRAP_SIGNAL(void size_allocate(Allocation& allocation), "size_allocate")
+
+// Changed signals -- inform widget of internal changes.
+// We rename parent_set => parent_changed
+//  and      style_set  => style_changed
+//  to avoid confusion with set_parent and set_style.
+
+  _WRAP_SIGNAL(void state_changed(Gtk::StateType previous_state), "state_changed", deprecated "Use signal_state_flags_changed() instead.")
+
+  //TODO: Remove no_default_handler when we can break ABI:
+  _WRAP_SIGNAL(void state_flags_changed(Gtk::StateFlags previous_state_flags), "state-flags-changed", no_default_handler)
+
+  /// Informs objects that their parent changed.
+  //- The widget passed is the former parent, which may be 0 if
+  //- there was no parent. (was parent_set in GTK+)
+  _WRAP_SIGNAL(void parent_changed(Widget* previous_parent), "parent_set")
+
+  _WRAP_SIGNAL(void hierarchy_changed(Widget* previous_toplevel), "hierarchy_changed")
+
+  _IGNORE_SIGNAL("style_set") //uses deprecated GtkStyle.
+  _WRAP_SIGNAL(void style_updated(), "style_updated")
+
+  _WRAP_SIGNAL(void direction_changed(TextDirection direction), "direction_changed")
+
+  _WRAP_SIGNAL(void grab_notify(bool was_grabbed), "grab_notify")
+
+  _WRAP_SIGNAL(void child_notify(GParamSpec* pspec), "child_notify")
+
+  _WRAP_SIGNAL(bool mnemonic_activate(bool group_cycling), "mnemonic_activate")
+  _WRAP_SIGNAL(void grab_focus(), "grab_focus")
+  _WRAP_SIGNAL(bool focus(DirectionType direction), "focus")
+  _WRAP_SIGNAL(bool event(GdkEvent* gdk_event), "event")
+  _WRAP_SIGNAL(void event_after(GdkEvent* gdk_event), "event_after", no_default_handler)
+
+  /// Event triggered by user pressing button.
+  _WRAP_SIGNAL(bool button_press_event(GdkEventButton* button_event),"button_press_event")
+
+  /// Event triggered by user releasing button.
+  _WRAP_SIGNAL(bool button_release_event(GdkEventButton* release_event), "button_release_event")
+
+  _WRAP_SIGNAL(bool scroll_event(GdkEventScroll* scroll_event), "scroll_event")
+
+  /// Event triggered by user moving pointer.
+  _WRAP_SIGNAL(bool motion_notify_event(GdkEventMotion* motion_event), "motion_notify_event")
+
+  _WRAP_SIGNAL(bool delete_event(GdkEventAny* any_event), "delete_event")
+
+#m4begin
+dnl// Hook in special code to catch explicit uses of gtk_object_destroy() by
+dnl// GTK+ code, e.g. when receiving the GDK_DELETE event.  For details, look
+dnl// at Gtk::Widget_Class::dispose_vfunc_callback() in widget.ccg.
+dnl
+  _PUSH(SECTION_PCC_CLASS_INIT_VFUNCS)
+    reinterpret_cast<GObjectClass*>(klass)->dispose = &dispose_vfunc_callback;
+  _SECTION(SECTION_PH_VFUNCS)
+    static void dispose_vfunc_callback(GObject* self);
+  _POP()
+#m4end
+
+#m4 _CONVERSION(`cairo_t*',`const ::Cairo::RefPtr< ::Cairo::Context>&',`::Cairo::RefPtr< ::Cairo::Context>(new ::Cairo::Context($3, false /* has_reference */))')
+  _WRAP_SIGNAL(bool draw(const ::Cairo::RefPtr< ::Cairo::Context>& cr), "draw")
+
+  /// Event triggered by a key press will widget has focus.
+  _WRAP_SIGNAL(bool key_press_event(GdkEventKey* key_event), "key_press_event")
+
+  /// Event triggered by a key release will widget has focus.
+  _WRAP_SIGNAL(bool key_release_event(GdkEventKey* key_event), "key_release_event")
+
+  /// Event triggered by pointer entering widget area.
+  _WRAP_SIGNAL(bool enter_notify_event(GdkEventCrossing* crossing_event), "enter_notify_event")
+
+  /// Event triggered by pointer leaving widget area.
+  _WRAP_SIGNAL(bool leave_notify_event(GdkEventCrossing* crossing_event), "leave_notify_event")
+
+  /// Event triggered by a window resizing.
+  _WRAP_SIGNAL(bool configure_event(GdkEventConfigure* configure_event), "configure_event")
+  _WRAP_SIGNAL(bool focus_in_event(GdkEventFocus* focus_event), "focus_in_event")
+  _WRAP_SIGNAL(bool focus_out_event(GdkEventFocus* gdk_event), "focus_out_event")
+  _WRAP_SIGNAL(bool map_event(GdkEventAny* any_event), "map_event")
+  _WRAP_SIGNAL(bool unmap_event(GdkEventAny* any_event), "unmap_event")
+  _WRAP_SIGNAL(bool property_notify_event(GdkEventProperty* property_event), "property_notify_event")
+  _WRAP_SIGNAL(bool selection_clear_event(GdkEventSelection* selection_event), "selection_clear_event")
+  _WRAP_SIGNAL(bool selection_request_event(GdkEventSelection* selection_event), "selection_request_event")
+  _WRAP_SIGNAL(bool selection_notify_event(GdkEventSelection* selection_event), "selection_notify_event")
+  _WRAP_SIGNAL(bool proximity_in_event(GdkEventProximity* proximity_event), "proximity_in_event")
+  _WRAP_SIGNAL(bool proximity_out_event(GdkEventProximity* proximity_event), "proximity_out_event")
+  _WRAP_SIGNAL(bool visibility_notify_event(GdkEventVisibility* visibility_event), "visibility_notify_event",
+    deprecated "Modern composited windowing systems with pervasive transparency make it impossible to track the visibility of a window reliably, so this signal can not be guaranteed to provide useful information.")
+  _WRAP_SIGNAL(bool window_state_event(GdkEventWindowState* window_state_event), "window_state_event")
+
+  //We use the optional custom_c_callback parameter with _WRAP_SIGNAL() for some of these,
+  //so that we can write special code to wrap the non-const SelectionData& output parameters:
+  _WRAP_SIGNAL(void selection_get(SelectionData& selection_data, guint info, guint time), "selection_get", custom_c_callback)
+  _WRAP_SIGNAL(void selection_received(const SelectionData& selection_data, guint time), "selection_received")
+
+#m4 _CONVERSION(`GdkDragContext*',`const Glib::RefPtr<Gdk::DragContext>&',Glib::wrap($3, true))
+
+  _WRAP_SIGNAL(void drag_begin(const Glib::RefPtr<Gdk::DragContext>& context), "drag_begin")
+  _WRAP_SIGNAL(void drag_end(const Glib::RefPtr<Gdk::DragContext>& context), "drag_end")
+  _WRAP_SIGNAL(void drag_data_get(const Glib::RefPtr<Gdk::DragContext>& context, SelectionData& selection_data, guint info, guint time), "drag_data_get", custom_c_callback)
+  _WRAP_SIGNAL(void drag_data_delete(const Glib::RefPtr<Gdk::DragContext>& context), "drag_data_delete")
+  _WRAP_SIGNAL(bool drag_failed(const Glib::RefPtr<Gdk::DragContext>& context, DragResult result), "drag_failed", no_default_handler)
+  _WRAP_SIGNAL(void drag_leave(const Glib::RefPtr<Gdk::DragContext>& context, guint time), "drag_leave")
+  _WRAP_SIGNAL(bool drag_motion(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time), "drag_motion")
+  _WRAP_SIGNAL(bool drag_drop(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time), "drag_drop")
+  _WRAP_SIGNAL(void drag_data_received(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, const SelectionData& selection_data, guint info, guint time), "drag_data_received")
+
+_CONVERSION(`GdkScreen*',`const Glib::RefPtr<Gdk::Screen>&',`Glib::wrap($3, true)')
+  _WRAP_SIGNAL(void screen_changed(const Glib::RefPtr<Gdk::Screen>& previous_screen), "screen_changed")
+
+  _WRAP_SIGNAL(void composited_changed(), "composited_changed", no_default_handler)
+
+//TODO: The signal_id is very C-like here:
+  //_WRAP_SIGNAL(bool can_activate_accel(guint signal_id), "can_activate_accel")
+
+   // TODO: Remove no_default_handler when we can break ABI:
+  _WRAP_SIGNAL(bool popup_menu(), "popup_menu", no_default_handler) //Note that popup-menu is a keybinding signal, but is really meant to be wrapped.
+
+  //Keybinding signals:
+  _IGNORE_SIGNAL("show_help")
+  _IGNORE_SIGNAL("keynav_failed")
+
+  _IGNORE_SIGNAL("destroy-event")
+
+   // TODO: Remove no_default_handler when we can break ABI:
+#m4 _CONVERSION(`GtkTooltip*',`const Glib::RefPtr<Tooltip>&',`Glib::wrap($3, true)')
+  _WRAP_SIGNAL(bool query_tooltip(int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Tooltip>& tooltip), "query_tooltip", no_default_handler)
+
+  //(This was added to GTK+ 2.8 but forgotten by us until gtkmm 2.13/14):
+  _WRAP_SIGNAL(bool grab_broken_event(GdkEventGrabBroken* grab_broken_event), "grab_broken_event", no_default_handler)
+
+  // TODO: Remove no_default_handler when we can break ABI:
+  _WRAP_SIGNAL(bool damage_event(GdkEventExpose* expose_event), "damage-event", no_default_handler)
+
+  // TODO: Remove no_default_handler when we can break ABI:
+  _WRAP_SIGNAL(bool touch_event(GdkEventTouch* touch_event), "touch_event", no_default_handler)
+
+  _WRAP_PROPERTY("name", Glib::ustring)
+  _WRAP_PROPERTY("parent", Container*)
+  _WRAP_PROPERTY("width_request", int)
+  _WRAP_PROPERTY("height_request", int)
+  _WRAP_PROPERTY("visible", bool)
+  _WRAP_PROPERTY("sensitive", bool)
+  _WRAP_PROPERTY("app_paintable", bool)
+  _WRAP_PROPERTY("can_focus", bool)
+  _WRAP_PROPERTY("has_focus", bool)
+  _WRAP_PROPERTY("is_focus", bool)
+  _WRAP_PROPERTY("focus_on_click", bool)
+  _WRAP_PROPERTY("can_default", bool)
+  _WRAP_PROPERTY("has_default", bool)
+  _WRAP_PROPERTY("receives_default", bool)
+  _WRAP_PROPERTY("composite_child", bool)
+  _WRAP_PROPERTY("style", Glib::RefPtr<Style>, deprecated "Don't use this API. There is no Style class in gtkmm 3.")
+  _WRAP_PROPERTY("events", Gdk::EventMask)
+  _WRAP_PROPERTY("has_tooltip", bool)
+  _WRAP_PROPERTY("tooltip_markup", Glib::ustring)
+  _WRAP_PROPERTY("tooltip_text", Glib::ustring)
+  _WRAP_PROPERTY("window", Glib::RefPtr<Gdk::Window>)
+  _WRAP_PROPERTY("no-show-all", bool)
+  _WRAP_PROPERTY("double-buffered", bool, deprecated "Widgets should not use this property.")
+
+  _WRAP_PROPERTY("halign", Align)
+  _WRAP_PROPERTY("valign", Align)
+  _WRAP_PROPERTY("margin-left", int, deprecated "Use property_margin_start() instead.")
+  _WRAP_PROPERTY("margin-right", int, deprecated "Use property_margin_end() instead.")
+  _WRAP_PROPERTY("margin-start", int)
+  _WRAP_PROPERTY("margin-end", int)
+  _WRAP_PROPERTY("margin-top", int)
+  _WRAP_PROPERTY("margin-bottom", int)
+  _WRAP_PROPERTY("margin", int)
+  _WRAP_PROPERTY("hexpand", bool)
+  _WRAP_PROPERTY("hexpand-set", bool)
+  _WRAP_PROPERTY("vexpand", bool)
+  _WRAP_PROPERTY("vexpand-set", bool)
+  _WRAP_PROPERTY("expand", bool)
+  _WRAP_PROPERTY("opacity", double)
+  _WRAP_PROPERTY("scale-factor", int)
+
+protected:
+
+  //comment in GTK+ header: "seldomly overidden"
+  _WRAP_VFUNC(void dispatch_child_properties_changed(guint, GParamSpec**), "dispatch_child_properties_changed")
+
+  _WRAP_VFUNC(void show_all(), "show_all")
+  _WRAP_VFUNC(Glib::RefPtr<Atk::Object> get_accessible(), "get_accessible", refreturn, ifdef GTKMM_ATKMM_ENABLED)
+
+  _WRAP_VFUNC(SizeRequestMode get_request_mode() const, get_request_mode)
+  _WRAP_VFUNC(void get_preferred_width(int& minimum_width, int& natural_width) const, get_preferred_width, custom_vfunc_callback)
+  _WRAP_VFUNC(void get_preferred_height_for_width(int width, int& minimum_height, int& natural_height) const, get_preferred_height_for_width, custom_vfunc_callback)
+  _WRAP_VFUNC(void get_preferred_height(int& minimum_height, int& natural_height) const, get_preferred_height, custom_vfunc_callback)
+  _WRAP_VFUNC(void get_preferred_width_for_height(int height, int& minimum_width, int& natural_width) const, get_preferred_width_for_height, custom_vfunc_callback)
+  //TODO: Wrap all the new vfuncs when we can break ABI.
+
+protected:
+  _CTOR_DEFAULT()
+
+  _WRAP_METHOD(void realize(), gtk_widget_realize)
+  _WRAP_METHOD(void unrealize(), gtk_widget_unrealize)
+
+#m4 _CONVERSION(`const ::Cairo::RefPtr< ::Cairo::Context>&',`cairo_t*',`($3)->cobj()')
+  _WRAP_METHOD(void draw(const ::Cairo::RefPtr< ::Cairo::Context>& cr), gtk_widget_draw)
+
+  _WRAP_METHOD(void set_mapped(bool mapped = true), gtk_widget_set_mapped)
+  _WRAP_METHOD(void set_realized(bool realized = true), gtk_widget_set_realized)
+
+  _WRAP_METHOD(void set_has_window(bool has_window = true), gtk_widget_set_has_window)
+
+  /** Sets a widget's window. This function should only be used in a
+   * widget's Gtk::Widget::on_realize() implementation. The %window passed is
+   * usually either a new window created with Gdk::Window::create(), or the
+   * window of its parent widget as returned by get_parent_window().
+   *
+   * Widgets must indicate whether they will create their own Gdk::Window
+   * by calling set_has_window(). This is usually done in the
+   * widget's constructor.
+   *
+   * This function should only be called by custom widget implementations,
+   * and they should call it in their on_realize() function.
+   *
+   * @newin{2,18}
+   *
+   * @param window A Gdk::Window.
+   */
+  void set_window(const Glib::RefPtr<Gdk::Window>& window);
+  _IGNORE(gtk_widget_set_window)
+
+  _WRAP_METHOD(static bool should_draw_window(const ::Cairo::RefPtr<const ::Cairo::Context>& cr, const Glib::RefPtr<const Gdk::Window>& window), gtk_cairo_should_draw_window)
+
+ /** Transforms the given cairo context @a cr from widget-relative
+  * coordinates to window-relative coordinates.
+  * If the widget's window is not an ancestor of @a window, no
+  * modification will be applied.
+  *
+  * This is the inverse to the transformation GTK applies when
+  * preparing an expose event to be emitted with the Widget's draw
+  * signal. It is intended to help porting multiwindow widgets from
+  * GTK+ 2 to the rendering architecture of GTK+ 3.
+  *
+  * @param cr The cairo context to transform.
+  * @param window The window to transform the context to.
+  *
+  * @newin{3,0}
+  */
+  void transform_cairo_context_to_window(const ::Cairo::RefPtr< ::Cairo::Context>& cr, const Glib::RefPtr<const Gdk::Window>& window);
+  _IGNORE(gtk_cairo_transform_to_window)
+
+#ifndef GTKMM_DISABLE_DEPRECATED
+  /**  Retrieves the widget's requisition.
+   *
+   * This method should only be used by widget implementations in
+   * order to discover whether the widget's requisition has actually
+   * changed after some internal state change (so that they can call
+   * queue_resize() instead of queue_draw()).
+   *
+   * Normally, size_request() should be used.
+   *
+   * @result The widget's requisition.
+   *
+   * @newin{2,20}
+   * @deprecated Use get_preferred_size() instead.
+   */
+  Requisition get_requisition() const;
+  _IGNORE(gtk_widget_get_requisition)
+#endif // GTKMM_DISABLE_DEPRECATED
+
+  _IGNORE(gtk_widget_style_attach) //deprecated
+  _IGNORE(gtk_widget_get_child_requisition) //deprecated.
+
+  //The parameter name is "the_property_name" to avoid a warning because there is a method with the "property_name" name.
+  /** Gets the value of a style property of @a widget.
+   *
+   * It is usually easier to use get_style_property(), to avoid the use of
+   * Glib::Value.
+   *
+   * @param the_property_name The name of a style property.
+   * @param value Location to return the property value.
+   */
+  _WRAP_METHOD(void get_style_property_value(
+                   const Glib::ustring& the_property_name, Glib::ValueBase& value) const,
+               gtk_widget_style_get_property)
+
+  void realize_if_needed();
+
+#m4begin
+dnl// Hook in custom hierarchy_changed callback.
+dnl// It will use the generated callback.
+dnl
+  _PUSH(SECTION_PCC_CLASS_INIT_DEFAULT_SIGNAL_HANDLERS)
+    klass->hierarchy_changed = &hierarchy_changed_callback_custom;
+  _SECTION(SECTION_PH_DEFAULT_SIGNAL_HANDLERS)
+    static void hierarchy_changed_callback_custom(GtkWidget* self, GtkWidget* p0);
+  _POP()
+#m4end
+
+#m4begin
+dnl// Hook in custom hierarchy_changed callback.
+dnl// It will use the generated callback.
+dnl
+  _PUSH(SECTION_PCC_CLASS_INIT_DEFAULT_SIGNAL_HANDLERS)
+    klass->parent_set = &parent_set_callback_custom;
+  _SECTION(SECTION_PH_DEFAULT_SIGNAL_HANDLERS)
+    static void parent_set_callback_custom(GtkWidget* self, GtkWidget* p0);
+  _POP()
+#m4end
+
+};
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
+//The parameter name is "the_property_name" to avoid a warning because there is a method with the "property_name" name.
+template <class PropertyType>
+void Widget::get_style_property(const Glib::ustring& the_property_name, PropertyType& value) const
+{
+  Glib::Value<PropertyType> property_value;
+  property_value.init(Glib::Value<PropertyType>::value_type());
+
+  this->get_style_property_value(the_property_name, property_value);
+
+  value = property_value.get();
+}
+
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+
+} // namespace Gtk

@@ -1,0 +1,225 @@
+/*
+ * Copyright (C) 2002 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include <glibmm/value.h>
+#include <gtk/gtk.h>
+
+_DEFS(gtkmm,gtk)
+
+namespace Gtk
+{
+
+_CC_INCLUDE(gtk/gtk.h)
+
+_WRAP_ENUM(AccelFlags, GtkAccelFlags)
+_WRAP_ENUM(Align, GtkAlign)
+_WRAP_ENUM(ArrowType, GtkArrowType)
+_WRAP_ENUM(AttachOptions, GtkAttachOptions)
+_WRAP_ENUM(ButtonBoxStyle, GtkButtonBoxStyle)
+_WRAP_ENUM(DeleteType, GtkDeleteType)
+_WRAP_ENUM(DirectionType, GtkDirectionType)
+
+//TODO: let _WRAP_ENUM() take a deprecated option.
+/**
+ * @deprecated This is not used in the gtkmm API.
+ */
+_WRAP_ENUM(ExpanderStyle, GtkExpanderStyle)
+
+_WRAP_ENUM(BuiltinIconSize, GtkIconSize)
+_WRAP_ENUM(TextDirection, GtkTextDirection)
+_WRAP_ENUM(Justification, GtkJustification)
+_WRAP_ENUM(MenuDirectionType, GtkMenuDirectionType)
+_WRAP_ENUM(MessageType, GtkMessageType)
+_WRAP_ENUM(MovementStep, GtkMovementStep)
+_WRAP_ENUM(Orientation, GtkOrientation)
+_WRAP_ENUM(CornerType, GtkCornerType)
+_WRAP_ENUM(PackType, GtkPackType)
+_WRAP_ENUM(PathPriorityType, GtkPathPriorityType)
+_WRAP_ENUM(PathType, GtkPathType)
+_WRAP_ENUM(PlacesOpenFlags, GtkPlacesOpenFlags)
+_WRAP_ENUM(PolicyType, GtkPolicyType)
+_WRAP_ENUM(PositionType, GtkPositionType)
+_WRAP_ENUM(ReliefStyle, GtkReliefStyle)
+_WRAP_ENUM(ResizeMode, GtkResizeMode)
+_WRAP_ENUM(RevealerTransitionType, GtkRevealerTransitionType)
+_WRAP_ENUM(ScrollType, GtkScrollType)
+_WRAP_ENUM(SelectionMode, GtkSelectionMode)
+_WRAP_ENUM(ShadowType, GtkShadowType)
+_WRAP_ENUM(StackTransitionType, GtkStackTransitionType)
+_WRAP_ENUM(StateType, GtkStateType)
+_WRAP_ENUM(TargetFlags, GtkTargetFlags)
+_WRAP_ENUM(ToolbarStyle, GtkToolbarStyle)
+_WRAP_ENUM(WindowPosition,GtkWindowPosition)
+_WRAP_ENUM(WindowType,GtkWindowType)
+_WRAP_ENUM(WrapMode, GtkWrapMode)
+_WRAP_ENUM(SortType, GtkSortType)
+_WRAP_ENUM(PageOrientation, GtkPageOrientation)
+_WRAP_ENUM(SensitivityType, GtkSensitivityType)
+_WRAP_ENUM(SizeRequestMode, GtkSizeRequestMode)
+_WRAP_ENUM(RegionFlags, GtkRegionFlags)
+_WRAP_ENUM(JunctionSides, GtkJunctionSides)
+_WRAP_ENUM(StateFlags, GtkStateFlags)
+_WRAP_ENUM(InputPurpose, GtkInputPurpose)
+_WRAP_ENUM(InputHints, GtkInputHints)
+_WRAP_ENUM(BaselinePosition, GtkBaselinePosition)
+
+
+/* We use a class to implement the GtkIconSize enum, because you can register
+ * new "enum" values.  The strict type rules of C++ don't allow using an enum
+ * like that.  Gtk::BuiltinIconSize is the actual GtkIconSize wrapper enum.
+ */
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+class Settings;
+#endif //DOXYGEN_SHOULD_SKIP_THIS
+
+/**
+ * Represents registered icon sizes.
+ * You can also use a Gtk::BuiltinIconSize instead of an IconSize.
+ */
+class IconSize
+{
+private:
+  int size_;
+
+public:
+  IconSize()                     : size_ (0)    {}
+  IconSize(BuiltinIconSize size) : size_ (size) {}
+
+  // Behave like an ordinary enum.
+  explicit IconSize(int size) : size_ (size) {}
+  operator int() const { return size_; }
+
+  /** Obtains the pixel size of a semantic icon size, possibly modified by user preferences for the default Gtk::Settings.
+   * Normally size would be Gtk::ICON_SIZE_MENU, Gtk::ICON_SIZE_BUTTON, etc.
+   * This function isn't normally needed because Gtk::Widget::render_icon() is the usual way to get an icon for
+   * rendering - then just look at the size of the rendered pixbuf. The rendered pixbuf may not even correspond
+   * to the width/height returned by IconSize::lookup(), because themes are free to render the pixbuf however they
+   * like, including changing the usual size.
+   *
+   * @param size An icon size.
+   * @param width Location to store icon width.
+   * @param height Location to store icon height.
+   * @result true if size was a valid size.
+   */
+  static bool lookup(IconSize size, int& width, int& height);
+
+#ifndef GTKMM_DISABLE_DEPRECATED
+  /** Obtains the pixel size of a semantic icon size, possibly modified by user preferences for a particular
+   * Gtk::Settings. Normally size would be Gtk::ICON_SIZE_MENU, Gtk::ICON_SIZE_BUTTON, etc.
+   * This function isn't normally needed because Gtk::Widget::render_icon() is the usual way to get an icon for
+   * rendering - then just look at the size of the rendered pixbuf. The rendered pixbuf may not even correspond
+   * to the width/height returned by IconSize::lookup(), because themes are free to render the pixbuf however they
+   * like, including changing the usual size.
+   *
+   * @param size An icon size.
+   * @param width Location to store icon width.
+   * @param height Location to store icon height.
+   * @param settings A Gtk::Settings object, used to determine which set of user preferences to used.
+   * @result true if size was a valid size.
+   *
+   * @deprecated Use IconSize::lookup() without the @a settings parameter instead.
+   * @newin{2,14}
+   */
+  static bool lookup(IconSize size, int& width, int& height, const Glib::RefPtr<Gtk::Settings>& settings);
+#endif //GTKMM_DISABLE_DEPRECATED
+
+#ifndef GTKMM_DISABLE_DEPRECATED
+  /** Registers a new icon size, along the same lines as ICON_SIZE_MENU, etc. Returns the integer value for the size.
+   *
+   * @param	name Name of the icon size.
+   * @param width The icon width.
+   * @param height The icon height.
+   * @result Integer value representing the size.
+   * @deprecated Use Gtk::IconTheme instead.
+   */
+  static IconSize register_new(const Glib::ustring& name, int width, int height);
+#endif //GTKMM_DISABLE_DEPRECATED
+
+#ifndef GTKMM_DISABLE_DEPRECATED
+  /** Registers @a alias as another name for @a target so calling from_name() with @a alias as argument will return @a target.
+   *
+   * @param alias An alias for target.
+   * @param target An existing icon size.
+   * @deprecated Use Gtk::IconTheme instead.
+   */
+  static void register_alias(const Glib::ustring& alias, IconSize target);
+#endif //GTKMM_DISABLE_DEPRECATED
+
+#ifndef GTKMM_DISABLE_DEPRECATED
+  /** Looks up the icon size associated with @a name.
+   *
+   * @param name the name to look up.
+   * @result The icon size with the given name.
+   * @deprecated Use Gtk::IconTheme instead.
+   */
+  static IconSize from_name(const Glib::ustring& name);
+#endif //GTKMM_DISABLE_DEPRECATED
+
+#ifndef GTKMM_DISABLE_DEPRECATED
+  /** Gets the canonical name of the given icon size.
+   *
+   * @param size size AnIconSize.
+   * @result The name of the given icon size.
+   * @deprecated Use Gtk::IconTheme instead.
+   */
+  static Glib::ustring get_name(IconSize size);
+#endif //GTKMM_DISABLE_DEPRECATED
+};
+
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+struct IconSizeTraits
+{
+  typedef Gtk::IconSize CppType;
+  typedef GtkIconSize   CType;
+  typedef GtkIconSize   CTypeNonConst;
+
+  static CType   to_c_type      (CType c_obj)            { return c_obj; }
+  static void    release_c_type (CType)                  {}
+  static CType   to_c_type      (const CppType& cpp_obj) { int value (cpp_obj); return static_cast<CType> (value); }
+  static CppType to_cpp_type    (CType c_obj)            { return CppType (c_obj); }
+};
+#endif //DOXYGEN_SHOULD_SKIP_THIS
+
+} // namespace Gtk
+
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Glib
+{
+
+template <>
+class Value<Gtk::IconSize> : public Glib::Value_Enum<Gtk::IconSize>
+{
+public:
+  static GType value_type() G_GNUC_CONST;
+};
+
+} // namespace Glib
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+
+namespace Gtk
+{
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+//We need this because we can't just use floats for enum value.
+float _gtkmm_align_float_from_enum(Align value);
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+
+} //namespace Gtk

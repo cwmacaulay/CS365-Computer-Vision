@@ -1,0 +1,40 @@
+/* Charles Macaulay
+   02-27-2016
+   CS 365
+   
+   query.h
+
+   This is the parent class for all of the query subclasses that
+   are unique for each task. 
+
+   Input: (from function readFV)
+   1- a dictionary of filenames and their feature vectors
+   2- an integer N  number of results image filenames to return
+
+   Output: (from function getResults)
+   a vector of sorted N filenames 
+*/
+
+#include <cstdio>
+#include <cstdlib>
+#include <dirent.h>
+#include <stack>
+#include <sys/stat.h>
+#include <string>
+#include <vector>
+#include <iterator>
+#include <iostream>
+#include <fstream>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/opencv.hpp>
+#include <map>
+
+class Query{
+ public:
+  Query( map::map fileFV, int Nfiles );
+
+  void analyze
+  vector<string> getResults() const;
+  
+  
+	    

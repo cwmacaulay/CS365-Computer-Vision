@@ -1,0 +1,78 @@
+/*
+ * Copyright 1998-2002 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include <gtk/gtk.h>
+
+typedef Gtk::RadioToolButton::Group Group; //So that the generate get_group return type is parsed.
+
+namespace Gtk
+{
+
+RadioToolButton::RadioToolButton(Group& group, const Glib::ustring& label)
+:
+  Glib::ObjectBase(nullptr), //Mark this class as gtkmmproc-generated, rather than a custom class, to allow vfunc optimisations.
+  Gtk::ToggleToolButton(Glib::ConstructParams(radiotoolbutton_class_.init(), "label", label.c_str(), nullptr))
+{
+  set_group(group);
+}
+
+#ifndef GTKMM_DISABLE_DEPRECATED
+RadioToolButton::RadioToolButton(Group& group, const Gtk::StockID& stock_id)
+:
+  Glib::ObjectBase(nullptr), //Mark this class as gtkmmproc-generated, rather than a custom class, to allow vfunc optimisations.
+  Gtk::ToggleToolButton(Glib::ConstructParams(radiotoolbutton_class_.init(), "stock_id", (stock_id).get_c_str(), nullptr))
+{
+  //Based on the source of gtk_radio_tool_button_new_from_stock():
+  set_group(group);
+}
+#endif // GTKMM_DISABLE_DEPRECATED
+
+/* This would look too much like a copy constructor:
+RadioToolButton::RadioToolButton(RadioToolButton& group, const Gtk::StockID& stock_id)
+:
+  Glib::ObjectBase(nullptr), //Mark this class as gtkmmproc-generated, rather than a custom class, to allow vfunc optimisations.
+  Gtk::ToggleToolButton(Glib::ConstructParams(radiotoolbutton_class_.init(), "stock_id", (stock_id).get_c_str(), nullptr))
+{
+  //Based on the source of gtk_radio_tool_button_new_with_stock_from_widget():
+  auto radiogroup = group.get_group();
+  set_group(radiogroup);
+}
+*/
+
+RadioToolButton::RadioToolButton(Widget& icon_widget, const Glib::ustring& label)
+:
+  Glib::ObjectBase(nullptr), //Mark this class as gtkmmproc-generated, rather than a custom class, to allow vfunc optimisations.
+  Gtk::ToggleToolButton(Glib::ConstructParams(radiotoolbutton_class_.init(), "icon_widget", (icon_widget).gobj(), "label", label.c_str(), nullptr))
+{
+}
+
+void RadioToolButton::set_group(Group& group)
+{
+  gtk_radio_tool_button_set_group(gobj(), group.group_);
+
+  //The group will be updated, ready for use with the next radio tool button:
+  group = get_group();
+}
+
+void RadioToolButton::reset_group()
+{
+  gtk_radio_tool_button_set_group(gobj(), nullptr);
+}
+
+} // namespace Gtk
+

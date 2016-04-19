@@ -1,0 +1,62 @@
+/*
+ * Copyright (C) 2002 The gtkmm Development Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include <gtkmm/bin.h>
+#include <gtkmm/scrollable.h>
+
+_DEFS(gtkmm,gtk)
+_PINCLUDE(gtkmm/private/bin_p.h)
+
+
+namespace Gtk {
+
+/** An adapter which makes widgets scrollable.
+ *
+ * @ingroup Widgets
+ * @ingroup Containers
+ */
+class Viewport
+ : public Bin,
+   public Scrollable
+{
+  _CLASS_GTKOBJECT(Viewport,GtkViewport,GTK_VIEWPORT,Gtk::Bin,GtkBin)
+  _IMPLEMENTS_INTERFACE(Scrollable)
+public:
+
+  _WRAP_CTOR(Viewport(const Glib::RefPtr<Adjustment>& hadjustment, const Glib::RefPtr<Adjustment>& vadjustment), gtk_viewport_new)
+
+
+  _IGNORE(gtk_viewport_get_hadjustment, gtk_viewport_get_vadjustment,
+    gtk_viewport_set_hadjustment, gtk_viewport_set_vadjustment) //deprecated
+
+  _WRAP_METHOD(void set_shadow_type(ShadowType type),
+               gtk_viewport_set_shadow_type)
+
+  _WRAP_METHOD(ShadowType get_shadow_type() const,
+               gtk_viewport_get_shadow_type)
+
+  _WRAP_METHOD(Glib::RefPtr<Gdk::Window> get_bin_window(), gtk_viewport_get_bin_window, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Gdk::Window> get_bin_window() const, gtk_viewport_get_bin_window, refreturn, constversion)
+
+  _WRAP_METHOD(Glib::RefPtr<Gdk::Window> get_view_window(), gtk_viewport_get_view_window, refreturn)
+  _WRAP_METHOD(Glib::RefPtr<const Gdk::Window> get_view_window() const, gtk_viewport_get_view_window, refreturn, constversion)
+
+  _WRAP_PROPERTY("shadow_type", ShadowType)
+};
+
+}  //namespace Gtk
